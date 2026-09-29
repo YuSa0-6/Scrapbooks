@@ -46,6 +46,13 @@
 	--shadow-lift: 4px 6px 0 rgb(0 0 0 / 0.2), 12px 22px 32px rgb(0 0 0 / 0.18);
 	--wobble: 1; /* 傾きの強さ。整頓モードで 0 になる */
 
+	/* 3D の机（表紙のボード）。角度には --wobble を掛けて使う */
+	--desk-perspective: 1800px;
+	--desk-tilt: 2.5deg; /* ポインターに合わせた傾きの最大 */
+	--lift-hover: 20px; /* ホバーで手前に浮く量 */
+	--lift-drag: 60px; /* ドラッグ中に手前に浮く量 */
+	--shadow-desk: 6px 14px 18px rgb(0 0 0 / 0.35); /* 浮いた紙の影（影用の要素に使う） */
+
 	/* コード用の書体 */
 	--font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
 
@@ -68,6 +75,34 @@
 	--spring: var(--m3e-default-spatial-duration) var(--m3e-default-spatial);
 	--spring-slow: var(--m3e-slow-spatial-duration) var(--m3e-slow-spatial);
 	--fade-fast: var(--m3e-fast-effects-duration) var(--m3e-fast-effects);
+}
+
+/*
+  ボードが JS から受け取る値。継承しない型付きの変数にして、
+  値が変わってもカードの中身のスタイル再計算が起きないようにする。
+*/
+@property --rx {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
+
+@property --ry {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
+
+@property --z {
+	syntax: "<length>";
+	inherits: false;
+	initial-value: 0px;
+}
+
+@property --lift {
+	syntax: "<length>";
+	inherits: false;
+	initial-value: 0px;
 }
 
 /* linear() が使えないブラウザでは、ふつうのイージングにする */

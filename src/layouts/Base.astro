@@ -102,6 +102,13 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 		<script is:inline>
 			// 保存済みのテーマと整頓モードを、描画前に反映してちらつきを防ぐ
 			(function () {
+				// JS が動くことを CSS に伝える（ボードは並べ終わるまで隠す）。
+				// 万一ボードの JS が動かなくても、4 秒たてば格子で見えるようにする
+				document.documentElement.classList.add("js");
+				setTimeout(function () {
+					var b = document.querySelector(".board[data-pending]");
+					if (b) b.removeAttribute("data-pending");
+				}, 4000);
 				var c = document.cookie;
 				var m = c.match(/(?:^|; )theme=([^;]+)/);
 				var theme = m ? m[1] : null;
