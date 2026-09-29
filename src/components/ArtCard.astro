@@ -1,12 +1,14 @@
 ---
 /**
- * 絵のカード。
+ * 絵のカード。裏返せる（表＝写真とタイトル、裏＝写真の裏のメモ）。
  * - frame が polaroid（または空）：テープで貼ったポラロイド写真
- * - それ以外：M3E の形に切り抜いたダイカットシール。ホバーで別の形にモーフする
- * カード全体を 1 つのリンクにして、押せる範囲を広く取る。
+ * - それ以外：M3E の形に切り抜いたダイカットシール（形は変形させない）
+ * カード全体を 1 つのリンクにする：タイトルの <a> を ::after で広げる。
+ * 裏返すボタンはリンクの外に置く（FlipCard）。
  */
 import type { EditProxy, MediaValue } from "emdash";
 import { Image } from "emdash/ui";
+import FlipCard from "./FlipCard.astro";
 import { isShapeName } from "../lib/shapes";
 import { stickerColor, tapeColor, tiltFor, transitionName } from "../lib/pieces";
 
@@ -46,37 +48,53 @@ const {
 const allTags = tags || [];
 const shaped = frame && frame !== "polaroid" && isShapeName(frame) ? frame : null;
 
-// 形ごとに、ホバーしたときの行き先の形
-const morphTo: Record<string, string> = {
-	cookie: "flower",
-	flower: "sunny",
-	sunny: "cookie",
-	clover: "squircle",
-	circle: "cookie",
-};
-
 const cardStyle = [
 	`--tilt: ${tiltFor(dbId, tilt)}deg`,
 	`--tape-color: ${tapeColor(dbId)}`,
 	`--tape-rot: ${(dbId.length % 2 === 0 ? -5 : 4)}deg`,
 	`--sticker-bg: ${stickerColor(dbId)}`,
-	shaped ? `--shape-from: var(--shape-${shaped}); --shape-to: var(--shape-${morphTo[shaped] ?? "sunny"})` : "",
+	shaped ? `--shape-from: var(--shape-${shaped})` : "",
 ].join("; ");
 ---
 
+
 <article class:list={["art-card", shaped ? "art-card--shaped" : "art-card--polaroid tape"]} style={cardStyle}>
-	<a href={href} class="card-link morph-host">
-		<div class="card-photo" style={`view-transition-name: ${transitionName("art", dbId)}`} {...edit?.featured_image}>
-			{shaped ? <div class="morph photo-shape"><Image image={featuredImage} /></div> : <Image image={featuredImage} />}
+	<FlipCard label={title}>
+		<div slot="front" class:list={["flip-sheet", "art-front", { "flip-sheet--bare": shaped }]}>
+			<div class="card-photo" style={`view-transition-name: ${transitionName("art", dbId)}`} {...edit?.featured_image}>
+				{
+					shaped ? (
+						<div class="die">
+							<span class="die-shadow" aria-hidden="true" />
+							<span class="die-edge" aria-hidden="true" />
+							<div class="photo-shape">
+								<Image image={featuredImage} />
+							</div>
+						</div>
+					) : (
+						<Image image={featuredImage} />
+					)
+				}
+			</div>
+			<div class="card-body">
+				<Heading class="card-title" {...edit?.title}>
+					<a href={href} class="card-link">{title}</a>
+				</Heading>
+				{
+					client && (
+						<p class="card-meta" {...edit?.client}>
+							{client}
+						</p>
+					)
+				}
+			</div>
 		</div>
-		<div class="card-body">
-			<Heading class="card-title" {...edit?.title}>{title}</Heading>
+		<div slot="back" class="flip-sheet art-back">
+			<p class="back-title hand" aria-hidden="true">— うら —</p>
 			{
-				(client || year) && (
-					<p class="card-meta">
-						{client && <span {...edit?.client}>{client}</span>}
-						{client && year && <span aria-hidden="true"> / </span>}
-						{year && <span {...edit?.year}>{year}</span>}
+				note && (
+					<p class="card-note hand" {...edit?.note}>
+						{note}
 					</p>
 				)
 			}
@@ -88,9 +106,9 @@ const cardStyle = [
 				)
 			}
 			{
-				note && (
-					<p class="card-note hand" {...edit?.note}>
-						{note}
+				year && (
+					<p class="card-meta" {...edit?.year}>
+						{year}
 					</p>
 				)
 			}
@@ -103,8 +121,11 @@ const cardStyle = [
 					</ul>
 				)
 			}
+			<a href={href} class="btn-label back-more" aria-label={`${title}を詳しく見る`}>
+				詳しく見る
+			</a>
 		</div>
-	</a>
+	</FlipCard>
 	{
 		sticker && (
 			<span class="sticker card-sticker" aria-hidden="true" {...edit?.sticker}>
@@ -132,29 +153,32 @@ const cardStyle = [
 		z-index: 5;
 	}
 
+	/* カード全体のリンク：タイトルの <a> を ::after で面いっぱいに広げる */
 	.card-link {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
 		color: var(--c-ink);
 		text-decoration: none;
 	}
 
+	.card-link::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+	}
+
 	.card-link:focus-visible {
+		outline: none;
+	}
+
+	.card-link:focus-visible::after {
+		outline: 3px dashed var(--color-brand);
 		outline-offset: 6px;
 	}
 
 	/* ポラロイド */
-	.art-card--polaroid .card-link {
+	.art-card--polaroid .art-front {
 		padding: 12px 12px 0;
-		background: #fffdf7;
-		box-shadow: var(--shadow-paper);
-		transition: box-shadow var(--spring);
-	}
-
-	.art-card--polaroid:hover .card-link,
-	.art-card--polaroid:focus-within .card-link {
-		box-shadow: var(--shadow-lift);
+		color: var(--c-ink);
 	}
 
 	.art-card--polaroid .card-photo {
@@ -168,16 +192,43 @@ const cardStyle = [
 		object-fit: cover;
 	}
 
-	/* ダイカットシール：形に切り抜いて、白いふちと影をつける */
+	/*
+	  ダイカットシール：形に切り抜いて、白いふちと影をつける。
+	  filter: drop-shadow は使わず、同じ形の層を重ねる：
+	  影（ずらした半透明）→ 白いふち（少し大きい）→ 写真。写真の形は変形させない。
+	*/
+	.art-card--shaped .art-front {
+		color: var(--c-ink);
+	}
+
 	.art-card--shaped .card-photo {
-		padding: 6px;
-		filter: drop-shadow(4px 0 0 #fff) drop-shadow(-4px 0 0 #fff) drop-shadow(0 4px 0 #fff)
-			drop-shadow(0 -4px 0 #fff) drop-shadow(3px 6px 0 rgb(0 0 0 / 0.22));
+		padding: 12px;
+	}
+
+	.die {
+		position: relative;
+	}
+
+	.die-shadow,
+	.die-edge {
+		position: absolute;
+		inset: 0;
+		clip-path: var(--shape-from);
+		scale: 1.08;
+	}
+
+	.die-shadow {
+		background: rgb(0 0 0 / 0.22);
+		translate: 3px 6px;
+	}
+
+	.die-edge {
+		background: #fff;
 	}
 
 	.photo-shape {
-		--morph-rot: 6deg;
-		--morph-scale: 1.02;
+		position: relative;
+		clip-path: var(--shape-from);
 	}
 
 	.photo-shape :global(img) {
@@ -186,17 +237,17 @@ const cardStyle = [
 
 	.art-card--shaped .card-body {
 		margin-top: 10px;
-		padding: var(--spacing-md);
+		padding: var(--spacing-md) var(--spacing-md) var(--flip-btn-space);
 		background: #fffdf7;
 		box-shadow: var(--shadow-paper);
-		rotate: calc(var(--tilt) * -0.6 * var(--wobble));
+		/* rotate は付けない：変形した要素の中では、リンクの ::after が面いっぱいに広がらないため */
 	}
 
 	.card-body {
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-xs);
-		padding: var(--spacing-md) var(--spacing-xs) var(--spacing-lg);
+		padding: var(--spacing-md) var(--spacing-xs) var(--flip-btn-space);
 	}
 
 	.card-title {
@@ -222,7 +273,6 @@ const cardStyle = [
 	}
 
 	.card-note {
-		margin-top: var(--spacing-xs);
 		font-size: var(--font-size-lg);
 		color: #c2185b;
 		rotate: calc(-1.5deg * var(--wobble));
@@ -232,11 +282,32 @@ const cardStyle = [
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--spacing-xs) var(--spacing-sm);
-		margin-top: var(--spacing-sm);
 		list-style: none;
 		font-size: var(--font-size-xs);
 		font-weight: 700;
 		color: #1f6f80;
+	}
+
+	/* 写真の裏：罫線の入った紙にメモを書いた感じ */
+	.art-card .art-back {
+		gap: var(--spacing-sm);
+		padding: var(--spacing-lg) var(--spacing-md) var(--flip-btn-space);
+		color: var(--c-ink);
+		background-image: repeating-linear-gradient(
+			transparent 0 27px,
+			rgb(62 198 224 / 0.28) 27px 28px
+		);
+	}
+
+	.back-title {
+		font-size: var(--font-size-sm);
+		color: #5b5147;
+	}
+
+	.back-more {
+		align-self: flex-start;
+		margin-top: auto;
+		--btn-bg: var(--c-green);
 	}
 
 	.card-sticker {

@@ -1,0 +1,207 @@
+---
+/**
+ * 表と裏を持つ入れ物。カードの右下の「裏返す」ボタンで、3D に裏返る。
+ *
+ * - front スロット＝表、back スロット＝裏。中身の見た目は、使う側のカードが決める
+ * - 裏返していない側の面は inert（Tab で入れず、読み上げもされない）。切り替えは src/scripts/flip.ts
+ * - 面は同じマスに重ねる（grid）ので、高いほうの面が高さを決める。裏返しても高さは変わらない
+ * - ボタンは回る箱の外に置く（裏返っても鏡文字にならず、いつも右下にある）
+ * - 整頓モード・動きを減らす設定では、回転せずに表と裏を入れ替えるだけ
+ * - 回転は rotateY(180deg) で固定。--wobble を掛けると 0 で裏に行けなくなるので、
+ *   --wobble が 0 のとき（整頓モード）は回転を止めて入れ替える道で同じことをしている
+ * - 面の紙は .flip-sheet（下の :global）。ホバーの影は、影用の層の opacity だけを動かす
+ */
+interface Props {
+	/** ボタンの名前に使う（「〇〇を裏返す」） */
+	label: string;
+}
+
+const { label } = Astro.props;
+---
+
+<div class="flip" data-flip>
+	<div class="flip-box">
+		<div class="flip-face flip-front" data-flip-front>
+			<slot name="front" />
+		</div>
+		<div class="flip-face flip-back" data-flip-back inert>
+			<slot name="back" />
+		</div>
+	</div>
+	<button type="button" class="flip-btn" data-flip-btn aria-pressed="false" aria-label={`${label}を裏返す`}>
+		<svg viewBox="0 0 24 24" aria-hidden="true">
+			<path d="M4 12a8 8 0 0 1 13.5-5.8M20 4v5h-5M20 12a8 8 0 0 1-13.5 5.8M4 20v-5h5"></path>
+		</svg>
+	</button>
+</div>
+
+<script>
+	import { initFlip } from "../scripts/flip";
+
+	initFlip();
+</script>
+
+<style>
+	.flip {
+		position: relative;
+		height: 100%;
+		/* カードの幅（およそ 270〜400px）に合わせた、この入れ物だけの遠近 */
+		perspective: 1500px;
+		/* 右下のボタンと重ならないように、面の下に空ける高さ */
+		--flip-btn-space: 56px;
+	}
+
+	/* 回る箱：この中の面に overflow / filter / clip-path / opacity を付けない（3D が平らになるため） */
+	.flip-box {
+		display: grid;
+		height: 100%;
+		transform-style: preserve-3d;
+		transition: transform var(--spring);
+	}
+
+	.flip[data-flipped] .flip-box {
+		transform: rotateY(180deg);
+	}
+
+	.flip-face {
+		grid-area: 1 / 1;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		position: relative;
+		backface-visibility: hidden;
+	}
+
+	.flip-back {
+		transform: rotateY(180deg);
+	}
+
+	/* 裏返すボタン：右下の丸いシール。リンクの外に置き、リンクの覆いより上に出す */
+	.flip-btn {
+		display: none;
+		position: absolute;
+		right: 8px;
+		bottom: 8px;
+		z-index: 3;
+		place-items: center;
+		width: 44px;
+		height: 44px;
+		padding: 0;
+		color: var(--c-ink);
+		background: var(--c-yellow);
+		border: 2px solid var(--c-ink);
+		border-radius: 50%;
+		box-shadow: 2px 2px 0 var(--c-ink);
+		cursor: pointer;
+		transition:
+			scale var(--spring-fast),
+			background var(--fade-fast);
+	}
+
+	/* JavaScript が動くときだけ見せる（動かないボタンを置かない） */
+	:global(html.js) .flip-btn {
+		display: grid;
+	}
+
+	.flip-btn:hover {
+		scale: 1.1;
+	}
+
+	.flip-btn:active {
+		scale: 0.92;
+	}
+
+	.flip-btn[aria-pressed="true"] {
+		background: var(--c-cyan);
+	}
+
+	.flip-btn svg {
+		width: 22px;
+		height: 22px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2.4;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		transition: rotate var(--spring);
+	}
+
+	.flip-btn[aria-pressed="true"] svg {
+		rotate: 180deg;
+	}
+
+	/* 整頓モード・動きを減らす設定：回転せずに、見える面だけを入れ替える */
+	:global(html.tidy) .flip-box {
+		transform: none !important;
+		transition: none;
+		transform-style: flat;
+	}
+
+	:global(html.tidy) .flip-back {
+		transform: none;
+		visibility: hidden;
+	}
+
+	:global(html.tidy) .flip[data-flipped] .flip-front {
+		visibility: hidden;
+	}
+
+	:global(html.tidy) .flip[data-flipped] .flip-back {
+		visibility: visible;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.flip-box {
+			transform: none !important;
+			transition: none;
+			transform-style: flat;
+		}
+
+		.flip-back {
+			transform: none;
+			visibility: hidden;
+		}
+
+		.flip[data-flipped] .flip-front {
+			visibility: hidden;
+		}
+
+		.flip[data-flipped] .flip-back {
+			visibility: visible;
+		}
+	}
+
+	/* 面の紙（使う側のカードが中身を入れる） */
+	:global(.flip-sheet) {
+		position: relative;
+		isolation: isolate;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		background: var(--sheet-bg, #fffdf7);
+		box-shadow: var(--shadow-paper);
+	}
+
+	/* 紙を貼らない面（切り抜きのシールなど） */
+	:global(.flip-sheet--bare) {
+		background: none;
+		box-shadow: none;
+	}
+
+	/* ホバーで浮く影：影用の層を置いて、opacity だけを動かす */
+	:global(.flip-sheet:not(.flip-sheet--bare)::before) {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		box-shadow: var(--shadow-lift);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity var(--fade-fast);
+	}
+
+	:global(.flip:hover .flip-sheet::before),
+	:global(.flip:focus-within .flip-sheet::before) {
+		opacity: 1;
+	}
+</style>

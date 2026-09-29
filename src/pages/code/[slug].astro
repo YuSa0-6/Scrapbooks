@@ -100,9 +100,8 @@ const seo = getSeoMeta(snippet, {
 					<iframe
 						class="stage-frame"
 						title={`${data.title} の実行結果`}
-						srcdoc={data.code}
+						data-srcdoc={data.code}
 						sandbox="allow-scripts"
-						loading="lazy"
 						data-stage
 					/>
 					<p class="stage-note">
@@ -173,6 +172,8 @@ const seo = getSeoMeta(snippet, {
 </Base>
 
 <script>
+	import { initLiveFrames, reloadLiveFrame } from "../../scripts/live-frames";
+
 	// コピー：押すとアイコンが「✓」に変わり、ボタンの形がばねで変わる
 	const copyButton = document.querySelector<HTMLButtonElement>("[data-copy]");
 	const source = document.querySelector<HTMLTextAreaElement>("[data-copy-source]");
@@ -197,16 +198,12 @@ const seo = getSeoMeta(snippet, {
 		}, 2000);
 	});
 
-	// もう一度：iframe を読み込み直して、最初から動かす
+	// もう一度：iframe を読み込み直して、最初から動かす（見えている間だけ動かす仕組みは live-frames.ts）
+	initLiveFrames();
 	const replay = document.querySelector<HTMLButtonElement>("[data-replay]");
 	const stage = document.querySelector<HTMLIFrameElement>("[data-stage]");
 	replay?.addEventListener("click", () => {
-		if (!stage) return;
-		const html = stage.srcdoc;
-		stage.srcdoc = "";
-		requestAnimationFrame(() => {
-			stage.srcdoc = html;
-		});
+		if (stage) reloadLiveFrame(stage);
 	});
 </script>
 

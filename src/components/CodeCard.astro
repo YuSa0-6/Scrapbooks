@@ -1,10 +1,13 @@
 ---
 /**
- * コードのカード。印刷した紙をテープで貼ったような見た目。
- * - runnable（動かして見せる）なら、安全な枠（sandbox iframe）の中で実際に動かす
- * - それ以外は先頭の数行を、色つき（シンタックスハイライト）で見せる
+ * コードのカード。印刷した紙をテープで貼ったような見た目。裏返せる。
+ * - runnable（動かして見せる）：表は安全な枠（sandbox iframe）で動く様子、裏はコードの抜粋
+ * - それ以外：表はコードの抜粋（色つき）、裏はひとこと説明・言語・タグ
+ * iframe は data-srcdoc で持ち、見えている間だけ live-frames.ts が動かす。
+ * カード全体のリンク：タイトルの <a> を ::after で広げる。
  */
 import type { EditProxy } from "emdash";
+import FlipCard from "./FlipCard.astro";
 import Highlight from "./Highlight.astro";
 import {
 	excerptLines,
@@ -57,40 +60,56 @@ const cardStyle = [
 ---
 
 <article class="code-card tape" style={cardStyle}>
-	<a href={href} class="card-link">
-		<div class="code-head">
-			<span class="lang-tape">{languageLabel(language)}</span>
-			{live && <span class="live-badge">動く</span>}
+	<FlipCard label={title}>
+		<div slot="front" class="flip-sheet code-sheet">
+			<div class="code-head">
+				<span class="lang-tape">{languageLabel(language)}</span>
+				{live && <span class="live-badge">動く</span>}
+			</div>
+			<div class="code-view code-paper" style={`view-transition-name: ${transitionName("code", dbId)}`}>
+				{
+					live ? (
+						<iframe
+							class="live-frame"
+							title={`${title} の動いている様子`}
+							data-srcdoc={code}
+							sandbox="allow-scripts"
+							tabindex="-1"
+							aria-hidden="true"
+						/>
+					) : (
+						<Highlight code={excerptLines(code)} language={language} />
+					)
+				}
+			</div>
+			<div class="card-body">
+				<Heading class="card-title" {...edit?.title}>
+					<a href={href} class="card-link">{title}</a>
+				</Heading>
+				{
+					note && (
+						<p class="card-note hand" {...edit?.note}>
+							{note}
+						</p>
+					)
+				}
+			</div>
 		</div>
-		<div class="code-view code-paper" style={`view-transition-name: ${transitionName("code", dbId)}`}>
+		<div slot="back" class="flip-sheet code-sheet code-back">
+			<div class="code-head">
+				<span class="lang-tape">{languageLabel(language)}</span>
+			</div>
 			{
-				live ? (
-					<iframe
-						class="live-frame"
-						title={`${title} の動いている様子`}
-						srcdoc={code}
-						sandbox="allow-scripts"
-						tabindex="-1"
-						aria-hidden="true"
-					/>
-				) : (
-					<Highlight code={excerptLines(code)} language={language} />
+				live && (
+					<div class="code-view code-view--small code-paper">
+						<Highlight code={excerptLines(code, 7)} language={language} />
+					</div>
 				)
 			}
-		</div>
-		<div class="card-body">
-			<Heading class="card-title" {...edit?.title}>{title}</Heading>
 			{
 				summary && (
 					<p class="card-summary" {...edit?.summary}>
 						{summary}
-					</p>
-				)
-			}
-			{
-				note && (
-					<p class="card-note hand" {...edit?.note}>
-						{note}
 					</p>
 				)
 			}
@@ -103,8 +122,11 @@ const cardStyle = [
 					</ul>
 				)
 			}
+			<a href={href} class="btn-label back-more" aria-label={`${title}を詳しく見る`}>
+				詳しく見る
+			</a>
 		</div>
-	</a>
+	</FlipCard>
 	{
 		sticker && (
 			<span class="sticker card-sticker" aria-hidden="true" {...edit?.sticker}>
@@ -113,6 +135,12 @@ const cardStyle = [
 		)
 	}
 </article>
+
+<script>
+	import { initLiveFrames } from "../scripts/live-frames";
+
+	initLiveFrames();
+</script>
 
 <style>
 	.code-card {
@@ -132,29 +160,36 @@ const cardStyle = [
 		z-index: 5;
 	}
 
-	.card-link {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
+	/* 方眼の印刷用紙（表も裏も） */
+	.code-card .code-sheet {
 		padding: 14px;
 		color: var(--color-text);
-		text-decoration: none;
-		/* 方眼の印刷用紙 */
 		background-color: var(--color-surface);
 		background-image:
 			linear-gradient(var(--color-grid) 1px, transparent 1px),
 			linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
 		background-size: 12px 12px;
-		box-shadow: var(--shadow-paper);
-		transition: box-shadow var(--spring);
 	}
 
-	.code-card:hover .card-link,
-	.code-card:focus-within .card-link {
-		box-shadow: var(--shadow-lift);
+	/* カード全体のリンク：タイトルの <a> を ::after で面いっぱいに広げる */
+	.card-link {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.card-link::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 1;
 	}
 
 	.card-link:focus-visible {
+		outline: none;
+	}
+
+	.card-link:focus-visible::after {
+		outline: 3px dashed var(--color-brand);
 		outline-offset: 6px;
 	}
 
@@ -191,11 +226,10 @@ const cardStyle = [
 		background: var(--color-surface);
 		border: 2px solid var(--color-text);
 		border-radius: 12px;
-		transition: border-radius var(--spring);
 	}
 
-	.code-card:hover .code-view {
-		border-radius: 24px;
+	.code-view--small {
+		max-height: 11rem;
 	}
 
 	.code-view :global(.shiki) {
@@ -217,7 +251,7 @@ const cardStyle = [
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-xs);
-		padding: var(--spacing-md) var(--spacing-xs) var(--spacing-xs);
+		padding: var(--spacing-md) var(--spacing-xs) var(--flip-btn-space);
 	}
 
 	.card-title {
@@ -246,11 +280,22 @@ const cardStyle = [
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--spacing-xs) var(--spacing-sm);
-		margin-top: var(--spacing-xs);
 		list-style: none;
 		font-size: var(--font-size-xs);
 		font-weight: 700;
 		color: light-dark(#1f6f80, #7fd3e3);
+	}
+
+	/* 裏：コードの抜粋・ひとこと説明・タグ */
+	.code-card .code-back {
+		gap: var(--spacing-sm);
+		padding-bottom: var(--flip-btn-space);
+	}
+
+	.back-more {
+		align-self: flex-start;
+		margin-top: auto;
+		--btn-bg: var(--c-green);
 	}
 
 	.card-sticker {
