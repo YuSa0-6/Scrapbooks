@@ -23,6 +23,7 @@
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.1",
     "@astrojs/react": "^6.0.5",
+    "@emdash-cms/auth": "1.0.1",
     "@emdash-cms/cloudflare": "^1.0.1",
     "astro": "^7.3.2",
     "board-layout": "workspace:*",

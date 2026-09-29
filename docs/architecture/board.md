@@ -57,4 +57,4 @@ generated: { by: claude-code/2.1.284, at: 2026-09-29T10:50:00Z }
 
 # 公開（持ち主だけ）
 
-ログインしている管理者には、FAB に「この並べ方を公開する」が出る。押すと [並べ方の公開プラグイン](/architecture/board-layout-plugin.md) に位置を送る（送る処理は [Effect](/architecture/effect.md) の Micro）。
+公開の権限（`content:publish_any`。編集者と管理者）を持つ人がログインしているときだけ、FAB に「この並べ方を公開する」が出る。押すと [並べ方の公開プラグイン](/architecture/board-layout-plugin.md) に位置を送る（送る処理は [Effect](/architecture/effect.md) の Micro）。

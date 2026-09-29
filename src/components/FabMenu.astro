@@ -6,7 +6,7 @@
  * 管理者（isAdmin）のときだけ、「この並べ方を公開する」の項目と結果の表示（role="status"）を足す。
  */
 interface Props {
-	/** Base.astro と同じ判定：Astro.locals.user があるか */
+	/** 並べ方を公開できる人か（content:publish_any。判定は index.astro） */
 	isAdmin?: boolean;
 }
 

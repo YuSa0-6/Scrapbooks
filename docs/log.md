@@ -2,6 +2,7 @@
 
 ## 2026-09-29
 
+- **Fixed** 「この並べ方を公開する」がログインしている投稿者にも出ていた（押すと 403）。保存ルートと同じ `hasPermission(user, "content:publish_any")` で出し分ける（[board](/architecture/board.md)）
 - **Changed** Worker の大きさの上限を今の値に直した。Cloudflare は 2026-09-04 に圧縮後の上限（無料 3MB・有料 10MB）をなくし、どのプランも圧縮前 64 MiB になった。このサイトは圧縮前で約 17.4 MiB。有料プランは Worker Loader のために引き続き要る（[deploy](/guides/deploy.md)・[system-overview](/architecture/system-overview.md)）
 
 - **Decision** ダムの写真は未公開にする。`load-favorites` に `hidden`（下書きに戻す一覧）を足した（[private-media](/decisions/private-media.md)）

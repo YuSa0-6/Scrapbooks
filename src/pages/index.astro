@@ -1,4 +1,5 @@
 ---
+import { hasPermission } from "@emdash-cms/auth";
 import { Effect } from "effect";
 import { loadCollection, loadSiteSettings, runPage } from "../lib/content";
 import Base from "../layouts/Base.astro";
@@ -18,6 +19,9 @@ const loaded = await runPage(
 	"Could not load the scrapbook",
 );
 if (loaded instanceof Response) return loaded;
+
+// 公開ボタンは、並べ方の保存ルートと同じ権限（content:publish_any＝編集者以上）の人にだけ出す
+const canPublish = hasPermission(Astro.locals.user, "content:publish_any");
 const { settingsResult, artResult, codeResult } = loaded;
 const settings = settingsResult.data;
 if (Astro.cache?.enabled) {
@@ -144,7 +148,7 @@ const tagline = settings?.tagline || "絵とコードの切り抜き帳";
 						ボード
 					</h2>
 				</header>
-				<Board pieces={pieces} label="絵とコードの切り抜き" isAdmin={Boolean(Astro.locals.user)} />
+				<Board pieces={pieces} label="絵とコードの切り抜き" isAdmin={canPublish} />
 			</section>
 		) : (
 			<section class="empty-state paper tape">
