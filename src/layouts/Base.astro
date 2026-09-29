@@ -5,6 +5,7 @@ import { createPublicPageContext } from "emdash/page";
 import { Font } from "astro:assets";
 import "../styles/tokens.css";
 import "../styles/theme.css";
+import { shapeCssVariables } from "../lib/shapes";
 
 interface Props {
 	title?: string;
@@ -47,7 +48,9 @@ const fullTitle = !title
 		  title.endsWith(` | ${siteTitle}`)
 		? title
 		: `${title}${separator}${siteTitle}`;
-const siteDescription = settings?.tagline || "つくったものの切り抜き帳";
+const siteDescription = settings?.tagline || "絵とコードの切り抜き帳";
+// M3E の形（clip-path 用）を CSS 変数として配る
+const shapeStyles = `:root{${shapeCssVariables()}}`;
 const siteLogo = settings?.logo?.url ? settings.logo : null;
 const canonicalUrl =
 	canonical ?? new URL(Astro.url.pathname, Astro.url.origin).href;
@@ -86,6 +89,7 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>{fullTitle}</title>
 		<EmDashHead page={pageCtx} />
+		<style is:inline set:html={shapeStyles} />
 		<Font cssVariable="--font-heading" preload />
 		<Font cssVariable="--font-body" />
 		<Font cssVariable="--font-hand" />

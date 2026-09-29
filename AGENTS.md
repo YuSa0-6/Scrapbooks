@@ -42,34 +42,46 @@ This template ships with `.mcp.json`, `.cursor/mcp.json`, and `.vscode/mcp.json`
 - When Astro's cache is enabled, pass content-query hints to `Astro.cache.set(cacheHint)`. Use the `WithCacheHint` variants for site settings, menus, taxonomies, and widget areas rendered by cached routes.
 - Taxonomy names in queries must match the seed's `"name"` field exactly (e.g., `"category"` not `"categories"`).
 
-## This Site（スクラップブック風ポートフォリオ）
+## This Site（絵とコードのスクラップブック）
 
-portfolio テンプレートを、スクラップブック風に作り替えたサイト。方針は「見た目ははちゃめちゃ、操作はまじめ」。
+portfolio テンプレートを作り替えた、絵とコードを集めるスクラップブック風のサイト。
+方針は「見た目ははちゃめちゃ、操作はまじめ」。動きは M3E（Material 3 Expressive）のばねと形の変形がベースで、配置は自由。
 テンプレート元の「控えめ・モノクロ」の方針は使わない。詳しくは `README.md`。
 
 ### ルール
 
 - 返答・コミットメッセージ・コメントは日本語で書く（識別子は英語）
-- 色・影・傾きの強さは `src/styles/theme.css` の `:root` のトークンを使う
+- 色・影・傾き・動きは `src/styles/theme.css` の `:root` のトークンを使う
+- 動き（transition）は M3E のばねトークンを使う：位置・大きさ・形は `--spring-fast` / `--spring` / `--spring-slow`、色・透明度は `--fade-fast`
+- 形の変形は `.morph`（`clip-path`）＋ `--shape-from` / `--shape-to`。形は `src/lib/shapes.ts` で作る（どれも同じ点の数なので、なめらかに変形できる）
 - 傾き（`rotate`）には必ず `var(--wobble)` を掛ける。整頓モード（`html.tidy`）と `prefers-reduced-motion` で 0 になるようにするため
 - 小さい文字（ボタン・メニュー・ラベル）は `--font-body` の太字。`--font-heading`（Dela Gothic One）は大きい見出しだけ
 - ボタン・リンクの高さは 44px 以上。今いるページには `aria-current="page"` を付ける
 - 飾り（ステッカー・落書き・テープ）は `aria-hidden="true"` にするか、CSS の疑似要素で描く
-- 作品カードは polaroid（`src/components/ProjectCard.astro`）。並び順は DOM の順番のままにし、位置を `absolute` でばらまかない（読み上げ・タブ移動の順番を守るため）
+- ボードの自由配置（`src/components/Board.astro`）は、見た目の位置だけを変える。HTML の並び順（読み上げ・Tab の順番）は変えない。せまい画面・整頓モード・JS なしでは格子に並べる
+- 動くコード（`runnable`）は `sandbox="allow-scripts"` の iframe の中だけで動かす。`allow-same-origin` は付けない
+- コードの色づけは `src/lib/highlight.ts` の Shiki（使う言語だけ読み込む）。`astro:components` の `<Code>` は全言語が入って Worker が重くなるので使わない
 
 ### 主なファイル
 
 | ファイル | 役割 |
 | --- | --- |
-| `src/styles/theme.css` | トークンと共通パーツ（`.tape` `.paper` `.sticker` `.btn-label` `.label-tape` `.marker` `.prose`） |
+| `src/styles/theme.css` | トークン（色・M3E のばね）と共通パーツ（`.tape` `.paper` `.sticker` `.btn-label` `.morph` `.prose`）、ページ遷移 |
+| `src/lib/shapes.ts` | M3E 風の形（クッキー・おひさま・クローバー・お花など）を `clip-path` で作る |
+| `src/lib/highlight.ts` | コードの色づけ |
 | `src/layouts/Base.astro` | ヘッダー（ラベルシールのメニュー・整頓モード）、フッター（配色切り替え） |
-| `src/components/RansomTitle.astro` | 1 文字ずつ切り抜いたようなタイトル |
-| `src/components/ProjectCard.astro` | ポラロイド風の作品カード |
-| `seed/seed.json` | スキーマと見本データ。作品に `note`（手書きメモ）と `sticker`（絵文字）を追加 |
+| `src/components/Board.astro` | 表紙のボード（自由配置・ドラッグ・シャッフル） |
+| `src/components/FabMenu.astro` | M3E の FAB メニュー（ボードの操作） |
+| `src/components/ArtCard.astro` | 絵のカード（ポラロイド／形に切り抜いたシール） |
+| `src/components/CodeCard.astro` | コードのカード（抜粋、または動く様子） |
+| `src/plugins/sticker/` | 本文にステッカーを貼るブロックの native プラグイン |
+| `seed/seed.json` | スキーマと見本データ |
 
 ### スキーマ
 
-- `projects`：`title`, `featured_image`, `client`, `year`, `summary`, `note`, `sticker`, `content`, `gallery`, `url`
+- `projects`（絵）：`title`, `featured_image`, `client`, `year`, `summary`, `note`, `sticker`, `frame`, `content`, `gallery`, `url`, `board_x`, `board_y`, `tilt`
+- `snippets`（コード）：`title`, `language`, `code`, `runnable`, `summary`, `note`, `sticker`, `content`, `board_x`, `board_y`, `tilt`
 - `pages`：`title`, `content`（`/about` で使う）
-- タクソノミー：`tag`
-- メニュー：`primary`（作品・わたしについて・れんらく）
+- タクソノミー：`tag`（絵とコードの両方）
+- メニュー：`primary`（絵・コード・わたしについて・れんらく）
+- 本文のブロック：`sticker`（`id` がことば、`shape`、`color`、`decorative`）

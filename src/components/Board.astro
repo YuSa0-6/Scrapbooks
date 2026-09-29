@@ -1,0 +1,409 @@
+---
+/**
+ * 表紙のボード。絵とコードの切り抜きを、自由な位置に貼る。
+ *
+ * - 広い画面：好きな位置に置ける（CMS の board_x / board_y、なければ自動でばらまく）。
+ *   マウスでドラッグして動かせて、位置はこの端末（localStorage）に保存する
+ * - せまい画面・整頓モード・JavaScript なし：ふつうの格子に並べる
+ * - 並び順（読み上げ・Tab の順番）は、いつも HTML の順番のまま
+ */
+import type { MediaValue } from "emdash";
+import ArtCard from "./ArtCard.astro";
+import CodeCard from "./CodeCard.astro";
+import FabMenu from "./FabMenu.astro";
+
+type Common = {
+	dbId: string;
+	href: string;
+	title: string;
+	summary?: string;
+	note?: string;
+	sticker?: string;
+	tilt?: number;
+	boardX?: number;
+	boardY?: number;
+	edit?: import("emdash").EditProxy;
+};
+
+export type BoardPiece =
+	| (Common & {
+			kind: "art";
+			featuredImage: MediaValue;
+			client?: string;
+			year?: string;
+			frame?: string;
+	  })
+	| (Common & {
+			kind: "code";
+			language: string;
+			code: string;
+			runnable?: boolean;
+	  });
+
+interface Props {
+	pieces: BoardPiece[];
+	label: string;
+}
+
+const { pieces, label } = Astro.props;
+---
+
+<div class="board-wrap">
+	<p class="board-hint hand" data-board-hint hidden>
+		ドラッグで動かせます（位置はこの端末に保存されます）
+	</p>
+	<ol class="board" data-board aria-label={label}>
+		{
+			pieces.map((piece, i) => (
+				<li
+					class:list={["board-piece", `board-piece--${piece.kind}`]}
+					data-piece-id={piece.dbId}
+					data-x={piece.boardX}
+					data-y={piece.boardY}
+					style={`--i: ${i}`}
+				>
+					{piece.kind === "art" ? (
+						<ArtCard
+							dbId={piece.dbId}
+							title={piece.title}
+							summary={piece.summary}
+							featuredImage={piece.featuredImage}
+							href={piece.href}
+							client={piece.client}
+							year={piece.year}
+							note={piece.note}
+							sticker={piece.sticker}
+							frame={piece.frame}
+							tilt={piece.tilt}
+							edit={piece.edit}
+							headingLevel="h3"
+						/>
+					) : (
+						<CodeCard
+							dbId={piece.dbId}
+							title={piece.title}
+							href={piece.href}
+							language={piece.language}
+							code={piece.code}
+							runnable={piece.runnable}
+							summary={piece.summary}
+							note={piece.note}
+							sticker={piece.sticker}
+							tilt={piece.tilt}
+							edit={piece.edit}
+							headingLevel="h3"
+						/>
+					)}
+				</li>
+			))
+		}
+	</ol>
+	<FabMenu />
+</div>
+
+<script>
+	const STORAGE_KEY = "scrapbook:board:v1";
+	const DRAG_THRESHOLD = 6;
+
+	type Saved = Record<string, { x: number; y: number }>;
+
+	const board = document.querySelector<HTMLOListElement>("[data-board]");
+	const hint = document.querySelector<HTMLElement>("[data-board-hint]");
+	const root = document.documentElement;
+	const wide = matchMedia("(min-width: 761px)");
+	const finePointer = matchMedia("(pointer: fine)");
+	const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+	function loadSaved(): Saved {
+		try {
+			return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") as Saved;
+		} catch {
+			return {};
+		}
+	}
+
+	function save(saved: Saved) {
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+		} catch {
+			// 保存できない環境（プライベートモードなど）では、その場限りにする
+		}
+	}
+
+	function hash(text: string): number {
+		let h = 2166136261;
+		for (const ch of text) {
+			h ^= ch.codePointAt(0)!;
+			h = Math.imul(h, 16777619);
+		}
+		return h >>> 0;
+	}
+
+	function isFree(): boolean {
+		return wide.matches && !root.classList.contains("tidy");
+	}
+
+	if (board) {
+		const pieces = Array.from(board.querySelectorAll<HTMLLIElement>(".board-piece"));
+		let saved = loadSaved();
+		let zTop = pieces.length;
+
+		function place(li: HTMLLIElement, x: number, y: number) {
+			li.style.setProperty("--x", `${Math.round(x)}px`);
+			li.style.setProperty("--y", `${Math.round(y)}px`);
+		}
+
+		function updateHeight() {
+			let bottom = 0;
+			for (const li of pieces) {
+				const y = parseFloat(li.style.getPropertyValue("--y")) || 0;
+				bottom = Math.max(bottom, y + li.offsetHeight);
+			}
+			board!.style.setProperty("--board-h", `${Math.ceil(bottom + 80)}px`);
+		}
+
+		/** 自動でばらまく：一番低い列に、少しずらして置いていく（石垣のように） */
+		function autoPositions(width: number, keys: HTMLLIElement[], random = false) {
+			const cols = Math.max(2, Math.floor(width / 300));
+			const colW = width / cols;
+			const heights = new Array<number>(cols).fill(0);
+			const result = new Map<HTMLLIElement, { x: number; y: number }>();
+			for (const li of keys) {
+				const id = li.dataset.pieceId ?? "";
+				const h = random ? Math.floor(Math.random() * 1e6) : hash(id);
+				const col = random ? h % cols : heights.indexOf(Math.min(...heights));
+				const w = li.offsetWidth;
+				const jitterX = (h % 60) - 30;
+				const jitterY = (Math.floor(h / 60) % 40);
+				const x = Math.min(Math.max(col * colW + (colW - w) / 2 + jitterX, 0), width - w);
+				const y = heights[col]! + jitterY;
+				heights[col] = y + li.offsetHeight + 36;
+				result.set(li, { x, y });
+			}
+			return result;
+		}
+
+		function layout() {
+			const free = isFree();
+			board!.classList.toggle("is-free", free);
+			if (hint) hint.hidden = !(free && finePointer.matches);
+			document.dispatchEvent(new CustomEvent("board:mode", { detail: { free } }));
+			if (!free) return;
+
+			const width = board!.clientWidth;
+			const auto = autoPositions(
+				width,
+				pieces.filter((li) => !saved[li.dataset.pieceId ?? ""] && li.dataset.x === undefined),
+			);
+			for (const li of pieces) {
+				const id = li.dataset.pieceId ?? "";
+				const w = li.offsetWidth;
+				if (saved[id]) {
+					place(li, saved[id].x * (width - w), saved[id].y);
+				} else if (li.dataset.x !== undefined) {
+					const x = (Math.min(100, Math.max(0, Number(li.dataset.x))) / 100) * (width - w);
+					place(li, x, Number(li.dataset.y ?? 0));
+				} else {
+					const pos = auto.get(li)!;
+					place(li, pos.x, pos.y);
+				}
+			}
+			updateHeight();
+		}
+
+		/** 位置を変えるときは、ばねでまとめて動かす */
+		function animate(change: () => void) {
+			if (!reducedMotion.matches) board!.classList.add("is-animating");
+			change();
+			updateHeight();
+			window.setTimeout(() => board!.classList.remove("is-animating"), 1200);
+		}
+
+		function shuffle() {
+			if (!isFree()) return;
+			const width = board!.clientWidth;
+			const positions = autoPositions(width, [...pieces].sort(() => Math.random() - 0.5), true);
+			animate(() => {
+				saved = {};
+				for (const [li, pos] of positions) {
+					place(li, pos.x, pos.y);
+					saved[li.dataset.pieceId ?? ""] = { x: pos.x / Math.max(1, width - li.offsetWidth), y: pos.y };
+				}
+				save(saved);
+			});
+		}
+
+		function reset() {
+			saved = {};
+			try {
+				localStorage.removeItem(STORAGE_KEY);
+			} catch {
+				// 何もしない
+			}
+			animate(layout);
+		}
+
+		// ドラッグで動かす（マウスなど細かく指せる入力のときだけ）
+		for (const li of pieces) {
+			let startX = 0;
+			let startY = 0;
+			let originX = 0;
+			let originY = 0;
+			let dragging = false;
+			let pointerId: number | null = null;
+
+			li.addEventListener("pointerdown", (event) => {
+				if (!isFree() || !finePointer.matches || event.button !== 0) return;
+				pointerId = event.pointerId;
+				startX = event.clientX;
+				startY = event.clientY;
+				originX = parseFloat(li.style.getPropertyValue("--x")) || 0;
+				originY = parseFloat(li.style.getPropertyValue("--y")) || 0;
+				dragging = false;
+			});
+
+			li.addEventListener("pointermove", (event) => {
+				if (pointerId !== event.pointerId) return;
+				const dx = event.clientX - startX;
+				const dy = event.clientY - startY;
+				if (!dragging && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+				if (!dragging) {
+					dragging = true;
+					li.setPointerCapture(event.pointerId);
+					li.classList.add("is-dragging");
+					li.style.zIndex = String(++zTop);
+				}
+				const maxX = board!.clientWidth - li.offsetWidth;
+				place(li, Math.min(Math.max(originX + dx, 0), maxX), Math.max(originY + dy, 0));
+				event.preventDefault();
+			});
+
+			function finish(event: PointerEvent) {
+				if (pointerId !== event.pointerId) return;
+				pointerId = null;
+				if (!dragging) return;
+				dragging = false;
+				li.classList.remove("is-dragging");
+				const width = board!.clientWidth;
+				const x = parseFloat(li.style.getPropertyValue("--x")) || 0;
+				const y = parseFloat(li.style.getPropertyValue("--y")) || 0;
+				saved[li.dataset.pieceId ?? ""] = { x: x / Math.max(1, width - li.offsetWidth), y };
+				save(saved);
+				updateHeight();
+				// ドラッグの直後のクリックで、リンクが開かないようにする
+				li.addEventListener(
+					"click",
+					(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+					},
+					{ capture: true, once: true },
+				);
+			}
+
+			li.addEventListener("pointerup", finish);
+			li.addEventListener("pointercancel", finish);
+			// 画像やリンクをブラウザ標準でドラッグしないようにする
+			li.addEventListener("dragstart", (event) => event.preventDefault());
+			// キーボードで選んだものは一番上に出す
+			li.addEventListener("focusin", () => {
+				li.style.zIndex = String(++zTop);
+			});
+		}
+
+		let resizeTimer = 0;
+		window.addEventListener("resize", () => {
+			window.clearTimeout(resizeTimer);
+			resizeTimer = window.setTimeout(layout, 150);
+		});
+		wide.addEventListener("change", layout);
+		new MutationObserver(layout).observe(root, { attributes: true, attributeFilter: ["class"] });
+
+		document.addEventListener("board:shuffle", shuffle);
+		document.addEventListener("board:reset", reset);
+		document.addEventListener("board:random", () => {
+			const links = pieces.map((li) => li.querySelector<HTMLAnchorElement>("a[href]")).filter(Boolean);
+			const link = links[Math.floor(Math.random() * links.length)];
+			if (link) window.location.href = link.href;
+		});
+
+		// 画像の読み込みで高さが変わるので、読み込み後にも並べ直す
+		layout();
+		window.addEventListener("load", layout, { once: true });
+	}
+</script>
+
+<style>
+	.board-wrap {
+		position: relative;
+	}
+
+	.board-hint {
+		margin-bottom: var(--spacing-lg);
+		font-size: var(--font-size-lg);
+		color: var(--color-muted);
+		text-align: right;
+	}
+
+	/* ふつうの並べ方（せまい画面・整頓モード・JS なし） */
+	.board {
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+		gap: var(--spacing-3xl) var(--spacing-2xl);
+	}
+
+	/* 自由配置 */
+	.board.is-free {
+		display: block;
+		position: relative;
+		height: var(--board-h, 1200px);
+	}
+
+	.board.is-free .board-piece {
+		position: absolute;
+		left: var(--x, 0);
+		top: var(--y, 0);
+		width: 270px;
+		cursor: grab;
+		touch-action: auto;
+		transition: scale var(--spring), filter var(--spring);
+	}
+
+	.board.is-free .board-piece--code {
+		width: 330px;
+	}
+
+	/* シャッフルなどで、ばねで位置を動かす（少しずつ時間をずらす） */
+	.board.is-animating .board-piece {
+		transition:
+			left var(--spring-slow),
+			top var(--spring-slow),
+			scale var(--spring);
+		transition-delay: calc(var(--i) * 25ms);
+	}
+
+	/* ドラッグ中：持ち上げる。離すと、ばねで元の大きさに戻る */
+	.board.is-free .board-piece.is-dragging {
+		cursor: grabbing;
+		scale: 1.06;
+		filter: drop-shadow(10px 18px 14px rgb(0 0 0 / 0.25));
+		transition: none;
+	}
+
+	.board.is-free .board-piece.is-dragging :global(.art-card),
+	.board.is-free .board-piece.is-dragging :global(.code-card) {
+		rotate: 0deg;
+	}
+
+	.board.is-free .board-piece:focus-within {
+		z-index: 1000;
+	}
+
+	@media (max-width: 600px) {
+		.board {
+			grid-template-columns: minmax(0, 1fr);
+			padding: 0 var(--spacing-sm);
+		}
+	}
+</style>

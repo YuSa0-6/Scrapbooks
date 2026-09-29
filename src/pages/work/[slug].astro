@@ -7,7 +7,8 @@ import {
 } from "emdash";
 import { Image, PortableText } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
-import ProjectCard from "../../components/ProjectCard.astro";
+import ArtCard from "../../components/ArtCard.astro";
+import { transitionName } from "../../lib/pieces";
 
 const slug = decodeSlug(Astro.params.slug);
 
@@ -79,7 +80,7 @@ const seo = getSeoMeta(project, {
 	content={{ collection: "projects", id: project.data.id, slug }}
 >
 	<article class="project">
-		<a href="/work" class="back-link hand">← 作品一覧にもどる</a>
+		<a href="/work" class="back-link hand">← 絵の一覧にもどる</a>
 
 		<header class="project-header">
 			{
@@ -124,7 +125,11 @@ const seo = getSeoMeta(project, {
 
 		{
 			project.data.featured_image && (
-				<figure class="featured-image tape" {...project.edit.featured_image}>
+				<figure
+					class="featured-image tape"
+					style={`view-transition-name: ${transitionName("art", project.data.id)}`}
+					{...project.edit.featured_image}
+				>
 					<Image image={project.data.featured_image} />
 					{project.data.sticker && (
 						<span class="sticker featured-sticker" aria-hidden="true">
@@ -165,11 +170,12 @@ const seo = getSeoMeta(project, {
 		otherProjects.length > 0 && (
 			<section class="more-projects" aria-labelledby="more-title">
 				<h2 id="more-title" class="label-tape">
-					ほかの切り抜き
+					ほかの絵
 				</h2>
 				<div class="more-grid">
-					{otherProjects.map((p, i) => (
-						<ProjectCard
+					{otherProjects.map((p) => (
+						<ArtCard
+							dbId={p.data.id}
 							title={p.data.title}
 							summary={p.data.summary}
 							featuredImage={p.data.featured_image}
@@ -177,8 +183,9 @@ const seo = getSeoMeta(project, {
 							client={p.data.client}
 							year={p.data.year}
 							sticker={p.data.sticker}
+							frame={p.data.frame}
+							tilt={p.data.tilt}
 							edit={p.edit}
-							index={i + 1}
 							headingLevel="h3"
 						/>
 					))}
@@ -263,7 +270,7 @@ const seo = getSeoMeta(project, {
 
 	.project-gallery {
 		display: grid;
-		grid-template-columns: repeat(2, 1fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: var(--spacing-2xl);
 		margin-top: var(--spacing-3xl);
 	}
@@ -293,7 +300,7 @@ const seo = getSeoMeta(project, {
 
 	.more-grid {
 		display: grid;
-		grid-template-columns: repeat(2, 1fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: var(--spacing-2xl);
 		margin-top: var(--spacing-2xl);
 	}
@@ -301,7 +308,7 @@ const seo = getSeoMeta(project, {
 	@media (max-width: 640px) {
 		.project-gallery,
 		.more-grid {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 		}
 
 		.featured-sticker {

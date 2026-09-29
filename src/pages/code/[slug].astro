@@ -1,0 +1,422 @@
+---
+import { decodeSlug, getEmDashCollection, getEmDashEntry, getSeoMeta } from "emdash";
+import { PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+import CodeCard from "../../components/CodeCard.astro";
+import Highlight from "../../components/Highlight.astro";
+import { languageLabel, transitionName } from "../../lib/pieces";
+
+const slug = decodeSlug(Astro.params.slug);
+if (!slug) return Astro.redirect("/404");
+
+const { entry: snippet, error, cacheHint } = await getEmDashEntry("snippets", slug);
+if (error) return new Response("Could not load the code", { status: 500 });
+if (!snippet) return Astro.redirect("/404");
+
+// ほかのコード：新しい順に少し多めに取り、今のものを除く
+const relatedResult = await getEmDashCollection("snippets", {
+	orderBy: { published_at: "desc" },
+	limit: 3,
+});
+if (relatedResult.error) return new Response("Could not load related code", { status: 500 });
+const others = relatedResult.entries.filter((s) => s.id !== snippet.id).slice(0, 2);
+if (Astro.cache?.enabled) {
+	Astro.cache.set(cacheHint);
+	Astro.cache.set(relatedResult.cacheHint);
+}
+
+const { data } = snippet;
+const live = data.runnable && data.language === "html";
+const lineCount = data.code.split("\n").length;
+const seo = getSeoMeta(snippet, {
+	siteUrl: Astro.url.origin,
+	path: `/code/${slug}`,
+	defaultDescription: data.summary,
+});
+---
+
+<Base
+	title={seo.title}
+	pageTitle={seo.ogTitle}
+	description={seo.description}
+	image={seo.ogImage}
+	canonical={seo.canonical}
+	robots={seo.robots}
+	type="article"
+	content={{ collection: "snippets", id: data.id, slug }}
+>
+	<article class="snippet">
+		<a href="/code" class="back-link hand">← コードの一覧にもどる</a>
+
+		<header class="snippet-header">
+			<p class="label-tape">
+				<span {...snippet.edit.language}>{languageLabel(data.language)}</span>
+				<span aria-hidden="true"> / </span>
+				{lineCount} 行
+			</p>
+			<h1 class="snippet-title" {...snippet.edit.title}>
+				<span class="marker">{data.title}</span>
+			</h1>
+			{
+				data.summary && (
+					<p class="snippet-summary" {...snippet.edit.summary}>
+						{data.summary}
+					</p>
+				)
+			}
+			{
+				data.note && (
+					<p class="snippet-note hand" {...snippet.edit.note}>
+						{data.note}
+					</p>
+				)
+			}
+		</header>
+
+		{
+			live && (
+				<section class="stage tape" aria-labelledby="stage-title">
+					<div class="stage-head">
+						<h2 id="stage-title" class="stage-title">
+							動かしてみる
+						</h2>
+						<button type="button" class="btn-label stage-replay" data-replay style="--btn-bg: var(--c-green)">
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v5h5" />
+							</svg>
+							もう一度
+						</button>
+					</div>
+					<iframe
+						class="stage-frame"
+						title={`${data.title} の実行結果`}
+						srcdoc={data.code}
+						sandbox="allow-scripts"
+						loading="lazy"
+						data-stage
+					/>
+					<p class="stage-note">
+						このコードは、ほかのページから切り離された安全な枠（sandbox）の中で動いています。
+					</p>
+				</section>
+			)
+		}
+
+		<section class="code-sheet code-paper" aria-labelledby="code-title">
+			<div class="code-sheet-head">
+				<h2 id="code-title" class="code-sheet-title">コード</h2>
+				<button type="button" class="copy-btn" data-copy>
+					<span class="copy-icon" aria-hidden="true">
+						<svg class="icon-copy" viewBox="0 0 24 24">
+							<rect x="8" y="8" width="12" height="12" rx="3" />
+							<path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+						</svg>
+						<svg class="icon-done" viewBox="0 0 24 24">
+							<path d="m5 12.5 4.5 4.5L19 7.5" />
+						</svg>
+					</span>
+					<span class="copy-label">コピー</span>
+				</button>
+				<p class="visually-hidden" role="status" aria-live="polite" data-copy-status></p>
+			</div>
+			<div class="code-body" style={`view-transition-name: ${transitionName("code", data.id)}`} {...snippet.edit.code}>
+				<Highlight code={data.code} language={data.language} />
+			</div>
+			<textarea class="copy-source" hidden data-copy-source>{data.code}</textarea>
+		</section>
+
+		{
+			data.content && data.content.length > 0 && (
+				<div class="snippet-content paper paper--ruled prose" {...snippet.edit.content}>
+					<PortableText value={data.content} />
+				</div>
+			)
+		}
+	</article>
+
+	{
+		others.length > 0 && (
+			<section class="more" aria-labelledby="more-title">
+				<h2 id="more-title" class="label-tape">
+					ほかのコード
+				</h2>
+				<div class="more-grid">
+					{others.map((s) => (
+						<CodeCard
+							dbId={s.data.id}
+							title={s.data.title}
+							href={`/code/${s.id}`}
+							language={s.data.language}
+							code={s.data.code}
+							runnable={s.data.runnable}
+							summary={s.data.summary}
+							sticker={s.data.sticker}
+							tilt={s.data.tilt}
+							edit={s.edit}
+							headingLevel="h3"
+						/>
+					))}
+				</div>
+			</section>
+		)
+	}
+</Base>
+
+<script>
+	// コピー：押すとアイコンが「✓」に変わり、ボタンの形がばねで変わる
+	const copyButton = document.querySelector<HTMLButtonElement>("[data-copy]");
+	const source = document.querySelector<HTMLTextAreaElement>("[data-copy-source]");
+	const status = document.querySelector<HTMLElement>("[data-copy-status]");
+	let resetTimer = 0;
+
+	copyButton?.addEventListener("click", async () => {
+		const text = source?.value ?? "";
+		try {
+			await navigator.clipboard.writeText(text);
+			copyButton.classList.add("is-done");
+			copyButton.querySelector(".copy-label")!.textContent = "コピーしました";
+			if (status) status.textContent = "コードをコピーしました";
+		} catch {
+			copyButton.querySelector(".copy-label")!.textContent = "コピーできませんでした";
+		}
+		window.clearTimeout(resetTimer);
+		resetTimer = window.setTimeout(() => {
+			copyButton.classList.remove("is-done");
+			copyButton.querySelector(".copy-label")!.textContent = "コピー";
+			if (status) status.textContent = "";
+		}, 2000);
+	});
+
+	// もう一度：iframe を読み込み直して、最初から動かす
+	const replay = document.querySelector<HTMLButtonElement>("[data-replay]");
+	const stage = document.querySelector<HTMLIFrameElement>("[data-stage]");
+	replay?.addEventListener("click", () => {
+		if (!stage) return;
+		const html = stage.srcdoc;
+		stage.srcdoc = "";
+		requestAnimationFrame(() => {
+			stage.srcdoc = html;
+		});
+	});
+</script>
+
+<style>
+	.snippet {
+		max-width: 900px;
+		margin: 0 auto;
+		padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-2xl);
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2xl);
+	}
+
+	.back-link {
+		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		font-size: var(--font-size-lg);
+		color: var(--color-brand);
+	}
+
+	.snippet-header {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--spacing-md);
+	}
+
+	.snippet-title {
+		font-size: clamp(2rem, 6vw, 3.5rem);
+		line-height: 1.25;
+	}
+
+	.snippet-title .marker {
+		--marker: var(--c-cyan);
+		box-decoration-break: clone;
+		-webkit-box-decoration-break: clone;
+	}
+
+	.snippet-summary {
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+	}
+
+	.snippet-note {
+		font-size: var(--font-size-xl);
+		color: var(--color-brand);
+		rotate: calc(-1.5deg * var(--wobble));
+	}
+
+	/* 実行結果の舞台 */
+	.stage {
+		padding: var(--spacing-lg);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-paper);
+		rotate: calc(-0.6deg * var(--wobble));
+	}
+
+	.stage-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--spacing-md);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.stage-title {
+		font-size: var(--font-size-lg);
+	}
+
+	.stage-replay svg {
+		width: 18px;
+		height: 18px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2.4;
+		stroke-linecap: round;
+	}
+
+	.stage-frame {
+		display: block;
+		width: 100%;
+		aspect-ratio: 16 / 10;
+		border: 2px solid var(--color-text);
+		border-radius: 16px;
+		background: #fff;
+	}
+
+	.stage-note {
+		margin-top: var(--spacing-sm);
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	/* コードの紙 */
+	.code-sheet {
+		position: relative;
+		padding: var(--spacing-lg);
+		background-color: var(--color-surface);
+		background-image:
+			linear-gradient(var(--color-grid) 1px, transparent 1px),
+			linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+		background-size: 12px 12px;
+		box-shadow: var(--shadow-paper);
+	}
+
+	.code-sheet-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: var(--spacing-md);
+	}
+
+	.code-sheet-title {
+		font-size: var(--font-size-lg);
+	}
+
+	.code-body {
+		padding: var(--spacing-md) var(--spacing-lg);
+		background: var(--color-surface);
+		border: 2px solid var(--color-text);
+		border-radius: 16px;
+	}
+
+	/* M3E のボタン：押すと角が変わり、完了するとアイコンがモーフする */
+	.copy-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		min-height: 48px;
+		padding: 0 var(--spacing-lg) 0 var(--spacing-md);
+		font-family: var(--font-body);
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+		color: var(--c-ink);
+		background: var(--c-yellow);
+		border: 2px solid var(--c-ink);
+		border-radius: 999px;
+		cursor: pointer;
+		transition:
+			border-radius var(--spring-fast),
+			scale var(--spring-fast),
+			background var(--fade-fast);
+	}
+
+	.copy-btn:active {
+		scale: 0.94;
+		border-radius: 12px;
+	}
+
+	.copy-btn.is-done {
+		background: var(--c-green);
+		border-radius: 14px;
+	}
+
+	.copy-icon {
+		position: relative;
+		width: 22px;
+		height: 22px;
+	}
+
+	.copy-icon svg {
+		position: absolute;
+		inset: 0;
+		width: 22px;
+		height: 22px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2.2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		transition:
+			scale var(--spring),
+			rotate var(--spring),
+			opacity var(--fade-fast);
+	}
+
+	.icon-done {
+		opacity: 0;
+		scale: 0.3;
+		rotate: -90deg;
+	}
+
+	.is-done .icon-copy {
+		opacity: 0;
+		scale: 0.3;
+		rotate: 90deg;
+	}
+
+	.is-done .icon-done {
+		opacity: 1;
+		scale: 1;
+		rotate: 0deg;
+	}
+
+	.snippet-content {
+		rotate: calc(-0.4deg * var(--wobble));
+	}
+
+	.more {
+		max-width: var(--wide-width);
+		margin: var(--spacing-xl) auto 0;
+		padding: 0 var(--spacing-lg);
+	}
+
+	.more-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--spacing-2xl);
+		margin-top: var(--spacing-2xl);
+	}
+
+	@media (max-width: 640px) {
+		.more-grid {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.code-body {
+			padding: var(--spacing-sm) var(--spacing-md);
+		}
+	}
+</style>

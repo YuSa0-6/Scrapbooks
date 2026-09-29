@@ -30,9 +30,36 @@ export interface Project {
   summary?: string;
   note?: string;
   sticker?: string;
+  frame?: "polaroid" | "cookie" | "clover" | "flower" | "sunny" | "circle";
   content?: PortableTextBlock[];
   gallery?: { "image": { id: string; src?: string; alt?: string; width?: number; height?: number; filename?: string; mimeType?: string; blurhash?: string; dominantColor?: string; focalX?: number; focalY?: number; provider?: string; previewUrl?: string; meta?: Record<string, unknown>; darkVariant?: { id: string; src?: string; alt?: string; width?: number; height?: number; filename?: string; mimeType?: string; blurhash?: string; dominantColor?: string; focalX?: number; focalY?: number; provider?: string; previewUrl?: string; meta?: Record<string, unknown> } }; "caption"?: string | null }[];
   url?: string;
+  board_x?: number;
+  board_y?: number;
+  tilt?: number;
+  createdAt: Date;
+  updatedAt: Date;
+  publishedAt: Date | null;
+  byline?: BylineSummary | null;
+  bylines?: ContentBylineCredit[];
+  terms?: Record<string, TaxonomyTerm[]>;
+}
+
+export interface Snippet {
+  id: string;
+  slug: string | null;
+  status: string;
+  title: string;
+  language: "html" | "css" | "javascript" | "typescript" | "python" | "glsl" | "shell" | "other";
+  code: string;
+  runnable?: boolean;
+  summary?: string;
+  note?: string;
+  sticker?: string;
+  content?: PortableTextBlock[];
+  board_x?: number;
+  board_y?: number;
+  tilt?: number;
   createdAt: Date;
   updatedAt: Date;
   publishedAt: Date | null;
@@ -45,5 +72,6 @@ declare module "emdash" {
   interface EmDashCollections {
     pages: Page;
     projects: Project;
+    snippets: Snippet;
   }
 }

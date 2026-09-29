@@ -3,18 +3,18 @@
 	"version": "1",
 	"meta": {
 		"name": "Scrapbook Portfolio",
-		"description": "スクラップブック風のポートフォリオ",
+		"description": "絵とコードを集めたスクラップブック風のポートフォリオ",
 		"author": "YuSa0-6"
 	},
 	"settings": {
 		"title": "Scrapbook",
-		"tagline": "つくったものの切り抜き帳"
+		"tagline": "絵とコードの切り抜き帳"
 	},
 	"collections": [
 		{
 			"slug": "projects",
-			"label": "Projects",
-			"labelSingular": "Project",
+			"label": "絵",
+			"labelSingular": "絵",
 			"supports": [
 				"drafts",
 				"revisions",
@@ -64,6 +64,21 @@
 					"type": "string"
 				},
 				{
+					"slug": "frame",
+					"label": "枠の形",
+					"type": "select",
+					"validation": {
+						"options": [
+							"polaroid",
+							"cookie",
+							"clover",
+							"flower",
+							"sunny",
+							"circle"
+						]
+					}
+				},
+				{
 					"slug": "content",
 					"label": "Content",
 					"type": "portableText",
@@ -94,6 +109,110 @@
 					"slug": "url",
 					"label": "Project URL",
 					"type": "url"
+				},
+				{
+					"slug": "board_x",
+					"label": "表紙での横位置（0〜100 %・空なら自動）",
+					"type": "integer"
+				},
+				{
+					"slug": "board_y",
+					"label": "表紙での縦位置（px・空なら自動）",
+					"type": "integer"
+				},
+				{
+					"slug": "tilt",
+					"label": "傾き（度・空なら自動）",
+					"type": "number"
+				}
+			]
+		},
+		{
+			"slug": "snippets",
+			"label": "コード",
+			"labelSingular": "コード",
+			"supports": [
+				"drafts",
+				"revisions",
+				"preview",
+				"search",
+				"seo"
+			],
+			"urlPattern": "/code/{slug}",
+			"fields": [
+				{
+					"slug": "title",
+					"label": "タイトル",
+					"type": "string",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "language",
+					"label": "言語",
+					"type": "select",
+					"required": true,
+					"validation": {
+						"options": [
+							"html",
+							"css",
+							"javascript",
+							"typescript",
+							"python",
+							"glsl",
+							"shell",
+							"other"
+						]
+					}
+				},
+				{
+					"slug": "code",
+					"label": "コード",
+					"type": "text",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "runnable",
+					"label": "動かして見せる（HTML のみ・安全な枠の中で動く）",
+					"type": "boolean"
+				},
+				{
+					"slug": "summary",
+					"label": "ひとこと説明",
+					"type": "text",
+					"searchable": true
+				},
+				{
+					"slug": "note",
+					"label": "手書きメモ",
+					"type": "string"
+				},
+				{
+					"slug": "sticker",
+					"label": "ステッカー（絵文字 1 つ）",
+					"type": "string"
+				},
+				{
+					"slug": "content",
+					"label": "解説",
+					"type": "portableText",
+					"searchable": true
+				},
+				{
+					"slug": "board_x",
+					"label": "表紙での横位置（0〜100 %・空なら自動）",
+					"type": "integer"
+				},
+				{
+					"slug": "board_y",
+					"label": "表紙での縦位置（px・空なら自動）",
+					"type": "integer"
+				},
+				{
+					"slug": "tilt",
+					"label": "傾き（度・空なら自動）",
+					"type": "number"
 				}
 			]
 		},
@@ -133,28 +252,33 @@
 			"labelSingular": "Tag",
 			"hierarchical": false,
 			"collections": [
-				"projects"
+				"projects",
+				"snippets"
 			],
 			"terms": [
 				{
-					"slug": "web",
-					"label": "Web"
+					"slug": "drawing",
+					"label": "らくがき"
 				},
 				{
-					"slug": "app",
-					"label": "アプリ"
+					"slug": "generative",
+					"label": "ジェネラティブ"
 				},
 				{
-					"slug": "design",
-					"label": "デザイン"
+					"slug": "css-art",
+					"label": "CSS アート"
 				},
 				{
-					"slug": "tool",
-					"label": "道具"
+					"slug": "motion",
+					"label": "動き"
 				},
 				{
-					"slug": "experiment",
-					"label": "実験"
+					"slug": "color",
+					"label": "色"
+				},
+				{
+					"slug": "photo",
+					"label": "写真"
 				}
 			]
 		}
@@ -166,8 +290,13 @@
 			"items": [
 				{
 					"type": "custom",
-					"label": "作品",
+					"label": "絵",
 					"url": "/work"
+				},
+				{
+					"type": "custom",
+					"label": "コード",
+					"url": "/code"
 				},
 				{
 					"type": "custom",
@@ -261,14 +390,14 @@
 				"slug": "meridian-brand",
 				"status": "published",
 				"data": {
-					"title": "ここに作品名",
-					"client": "サンプル（差し替えてね）",
+					"title": "ラフスケッチ集",
+					"client": "らくがき帳",
 					"year": "2026",
-					"summary": "作品のひとこと説明をここに書きます。何をつくったか、1〜2 文で。",
+					"summary": "電車の中で描いたラフをまとめました。線の迷いもそのまま。",
 					"featured_image": {
 						"$media": {
 							"url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&h=900&fit=crop",
-							"alt": "ここに作品名 のカバー画像",
+							"alt": "ラフスケッチ集",
 							"filename": "photo-1558618666-fcd25c85cd64.jpg"
 						}
 					},
@@ -279,11 +408,19 @@
 							"children": [
 								{
 									"_type": "span",
-									"text": "この作品ページは見本です。管理画面（/_emdash/admin）から、自分の作品に書き換えてください。",
+									"text": "見本の作品です。管理画面から自分の絵に差し替えてください。",
 									"_key": "k1"
 								}
 							],
 							"_key": "k0"
+						},
+						{
+							"_type": "sticker",
+							"shape": "cookie",
+							"color": "yellow",
+							"decorative": true,
+							"_key": "k2",
+							"id": "ここが推し"
 						},
 						{
 							"_type": "block",
@@ -291,19 +428,7 @@
 							"children": [
 								{
 									"_type": "span",
-									"text": "きっかけ",
-									"_key": "k3"
-								}
-							],
-							"_key": "k2"
-						},
-						{
-							"_type": "block",
-							"style": "normal",
-							"children": [
-								{
-									"_type": "span",
-									"text": "なぜつくろうと思ったのかを書きます。",
+									"text": "描いたきっかけ",
 									"_key": "k5"
 								}
 							],
@@ -311,15 +436,35 @@
 						},
 						{
 							"_type": "block",
-							"style": "h2",
+							"style": "normal",
 							"children": [
 								{
 									"_type": "span",
-									"text": "工夫したところ",
+									"text": "なぜ描こうと思ったのかを書きます。",
 									"_key": "k7"
 								}
 							],
 							"_key": "k6"
+						},
+						{
+							"_type": "sticker",
+							"shape": "bubble",
+							"color": "pink",
+							"decorative": false,
+							"_key": "k8",
+							"id": "線は 1 本で描くのがこだわり"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "道具",
+									"_key": "k11"
+								}
+							],
+							"_key": "k10"
 						},
 						{
 							"_type": "block",
@@ -327,23 +472,11 @@
 							"children": [
 								{
 									"_type": "span",
-									"text": "使った技術や、こだわった点を書きます。",
-									"_key": "k9"
+									"text": "使った道具や、こだわった点を書きます。",
+									"_key": "k13"
 								}
 							],
-							"_key": "k8"
-						},
-						{
-							"_type": "block",
-							"style": "blockquote",
-							"children": [
-								{
-									"_type": "span",
-									"text": "手書き風の引用は、ふせんのように表示されます。",
-									"_key": "k11"
-								}
-							],
-							"_key": "k10"
+							"_key": "k12"
 						}
 					],
 					"gallery": [
@@ -369,12 +502,12 @@
 						}
 					],
 					"note": "いちばんのお気に入り！",
-					"sticker": "⭐"
+					"sticker": "✏️",
+					"frame": "polaroid"
 				},
 				"taxonomies": {
 					"tag": [
-						"design",
-						"web"
+						"drawing"
 					]
 				}
 			},
@@ -383,14 +516,14 @@
 				"slug": "volta-web",
 				"status": "published",
 				"data": {
-					"title": "Web サイトの見本",
-					"client": "個人制作",
+					"title": "肖像のれんしゅう",
+					"client": "模写",
 					"year": "2026",
-					"summary": "Web サイトの作品の見本です。画像・説明・タグを差し替えて使います。",
+					"summary": "光の当たり方を観察するための練習。",
 					"featured_image": {
 						"$media": {
 							"url": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=900&fit=crop",
-							"alt": "Web サイトの見本 のカバー画像",
+							"alt": "肖像のれんしゅう",
 							"filename": "photo-1497366216548-37526070297c.jpg"
 						}
 					},
@@ -409,13 +542,14 @@
 							"_key": "k0"
 						}
 					],
-					"note": "3 日で作った",
-					"sticker": "🚀"
+					"note": "目がむずかしい",
+					"sticker": "👀",
+					"frame": "cookie"
 				},
 				"taxonomies": {
 					"tag": [
-						"web",
-						"experiment"
+						"drawing",
+						"photo"
 					]
 				}
 			},
@@ -424,14 +558,14 @@
 				"slug": "archive-print",
 				"status": "published",
 				"data": {
-					"title": "アプリの見本",
-					"client": "個人制作",
+					"title": "廊下の遠近法",
+					"client": "スケッチ",
 					"year": "2025",
-					"summary": "アプリの作品の見本です。スクリーンショットをギャラリーに並べられます。",
+					"summary": "一点透視の練習。消失点をひとつ決めて描く。",
 					"featured_image": {
 						"$media": {
 							"url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=900&fit=crop",
-							"alt": "アプリの見本 のカバー画像",
+							"alt": "廊下の遠近法",
 							"filename": "photo-1507003211169-0a1dd7228f2d.jpg"
 						}
 					},
@@ -449,13 +583,13 @@
 							"_key": "k0"
 						}
 					],
-					"note": "毎日つかってる",
-					"sticker": "📱"
+					"note": "定規なしで挑戦",
+					"sticker": "📐",
+					"frame": "flower"
 				},
 				"taxonomies": {
 					"tag": [
-						"app",
-						"tool"
+						"drawing"
 					]
 				}
 			},
@@ -464,14 +598,14 @@
 				"slug": "coastal-photo",
 				"status": "published",
 				"data": {
-					"title": "写真・デザインの見本",
-					"client": "趣味",
+					"title": "波の色",
+					"client": "写真と色",
 					"year": "2025",
-					"summary": "写真やデザインの作品の見本です。",
+					"summary": "海の写真から色を拾って、パレットにしました。",
 					"featured_image": {
 						"$media": {
 							"url": "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1200&h=900&fit=crop",
-							"alt": "写真・デザインの見本 のカバー画像",
+							"alt": "波の色",
 							"filename": "photo-1505142468610-359e7d316be0.jpg"
 						}
 					},
@@ -490,11 +624,302 @@
 						}
 					],
 					"note": "海、また行きたい",
-					"sticker": "🌊"
+					"sticker": "🌊",
+					"frame": "clover"
 				},
 				"taxonomies": {
 					"tag": [
-						"design"
+						"photo",
+						"color"
+					]
+				}
+			}
+		],
+		"snippets": [
+			{
+				"id": "wavy-lines",
+				"slug": "wavy-lines",
+				"status": "published",
+				"data": {
+					"title": "ゆれる線",
+					"language": "html",
+					"code": "<!doctype html>\n<html>\n<body style=\"margin:0;background:#fffdf7\">\n<canvas id=\"c\"></canvas>\n<script>\n  // ゆれる線：少しずつずらした波を重ねて描く\n  const c = document.getElementById(\"c\");\n  const g = c.getContext(\"2d\");\n  const colors = [\"#ff6fae\", \"#3ec6e0\", \"#ffd23f\", \"#7bd389\", \"#1d1a16\"];\n\n  function resize() {\n    c.width = innerWidth;\n    c.height = innerHeight;\n  }\n  addEventListener(\"resize\", resize);\n  resize();\n\n  function draw(time) {\n    g.clearRect(0, 0, c.width, c.height);\n    g.lineWidth = 3;\n    for (let i = 0; i < 12; i++) {\n      g.strokeStyle = colors[i % colors.length];\n      g.beginPath();\n      for (let x = 0; x <= c.width; x += 8) {\n        const y =\n          c.height / 2 +\n          Math.sin(x * 0.012 + time * 0.001 + i * 0.5) * (20 + i * 6) +\n          (i - 6) * 10;\n        x === 0 ? g.moveTo(x, y) : g.lineTo(x, y);\n      }\n      g.stroke();\n    }\n    requestAnimationFrame(draw);\n  }\n  requestAnimationFrame(draw);\n</script>\n</body>\n</html>\n",
+					"runnable": true,
+					"summary": "波を 12 本、少しずつずらして重ねると、布みたいに見えてくる。",
+					"note": "ずっと見てられる",
+					"sticker": "🌀",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "波を 12 本、少しずつずらして重ねると、布みたいに見えてくる。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ポイント",
+									"_key": "k3"
+								}
+							],
+							"_key": "k2"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ここに解説を書きます。管理画面から書き換えられます。",
+									"_key": "k5"
+								}
+							],
+							"_key": "k4"
+						}
+					]
+				},
+				"taxonomies": {
+					"tag": [
+						"generative",
+						"motion"
+					]
+				}
+			},
+			{
+				"id": "fried-egg",
+				"slug": "fried-egg",
+				"status": "published",
+				"data": {
+					"title": "CSS だけの目玉焼き",
+					"language": "html",
+					"code": "<!doctype html>\n<html>\n<head>\n<style>\n  /* CSS だけの目玉焼き。white と yolk の 2 つの要素だけ */\n  body {\n    margin: 0;\n    height: 100vh;\n    display: grid;\n    place-items: center;\n    background: #3ec6e0;\n  }\n  .white {\n    width: 180px;\n    height: 150px;\n    background: #fff;\n    border-radius: 58% 42% 55% 45% / 50% 60% 40% 50%;\n    display: grid;\n    place-items: center;\n    box-shadow: 6px 8px 0 rgb(0 0 0 / 0.15);\n    animation: wobble 3s ease-in-out infinite;\n  }\n  .yolk {\n    width: 64px;\n    height: 64px;\n    border-radius: 50%;\n    background: radial-gradient(circle at 35% 35%, #ffe680, #ffb000 60%);\n  }\n  @keyframes wobble {\n    50% { border-radius: 45% 55% 40% 60% / 60% 45% 55% 40%; }\n  }\n</style>\n</head>\n<body>\n  <div class=\"white\"><div class=\"yolk\"></div></div>\n</body>\n</html>\n",
+					"runnable": true,
+					"summary": "border-radius を 8 つの値で指定すると、ぐにゃっとした形が作れる。",
+					"note": "ぷるぷるする",
+					"sticker": "🍳",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "border-radius を 8 つの値で指定すると、ぐにゃっとした形が作れる。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ポイント",
+									"_key": "k3"
+								}
+							],
+							"_key": "k2"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ここに解説を書きます。管理画面から書き換えられます。",
+									"_key": "k5"
+								}
+							],
+							"_key": "k4"
+						}
+					]
+				},
+				"taxonomies": {
+					"tag": [
+						"css-art"
+					]
+				}
+			},
+			{
+				"id": "spring",
+				"slug": "spring",
+				"status": "published",
+				"data": {
+					"title": "ばねの式",
+					"language": "javascript",
+					"code": "// ばね（spring）の動きを 1 フレームずつ計算する。\n// Material 3 Expressive の「ぷるん」とした動きは、この式でできている。\nfunction createSpring({ stiffness = 380, damping = 0.8 } = {}) {\n  const c = damping * 2 * Math.sqrt(stiffness); // 減衰の強さ\n  let position = 0;\n  let velocity = 0;\n\n  return function step(target, dt) {\n    const force = -stiffness * (position - target) - c * velocity;\n    velocity += force * dt;\n    position += velocity * dt;\n    return position;\n  };\n}\n\n// 使い方：毎フレーム step を呼ぶと、target に向かって揺れながら近づく\nconst box = document.querySelector(\".box\");\nconst spring = createSpring({ stiffness: 800, damping: 0.6 });\nlet last = performance.now();\nfunction tick(now) {\n  const x = spring(1, (now - last) / 1000);\n  last = now;\n  box.style.scale = String(x);\n  requestAnimationFrame(tick);\n}\nrequestAnimationFrame(tick);\n",
+					"runnable": false,
+					"summary": "M3E の「ぷるん」とした動きのもと。このサイトの動きもこれで作っています。",
+					"note": "このサイトの心臓",
+					"sticker": "🧲",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "M3E の「ぷるん」とした動きのもと。このサイトの動きもこれで作っています。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ポイント",
+									"_key": "k3"
+								}
+							],
+							"_key": "k2"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ここに解説を書きます。管理画面から書き換えられます。",
+									"_key": "k5"
+								}
+							],
+							"_key": "k4"
+						}
+					]
+				},
+				"taxonomies": {
+					"tag": [
+						"motion"
+					]
+				}
+			},
+			{
+				"id": "oklch-palette",
+				"slug": "oklch-palette",
+				"status": "published",
+				"data": {
+					"title": "きれいなランダム色",
+					"language": "javascript",
+					"code": "// ランダムな色を、見た目の明るさをそろえて選ぶ。\n// OKLCH は「人の目で見た明るさ」が一定なので、どの色を選んでも浮かない。\nfunction palette(count, { lightness = 0.78, chroma = 0.14 } = {}) {\n  const start = Math.random() * 360;\n  const golden = 137.508; // 黄金角ずつ色相をずらすと、隣が似た色にならない\n  return Array.from({ length: count }, (_, i) => {\n    const hue = (start + i * golden) % 360;\n    return `oklch(${lightness} ${chroma} ${hue.toFixed(1)})`;\n  });\n}\n\nconsole.log(palette(5));\n// → [\"oklch(0.78 0.14 211.3)\", \"oklch(0.78 0.14 348.8)\", ...]\n",
+					"runnable": false,
+					"summary": "OKLCH と黄金角で、どれを選んでも浮かない色を作る。",
+					"note": "色えらびが楽になった",
+					"sticker": "🎨",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "OKLCH と黄金角で、どれを選んでも浮かない色を作る。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ポイント",
+									"_key": "k3"
+								}
+							],
+							"_key": "k2"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ここに解説を書きます。管理画面から書き換えられます。",
+									"_key": "k5"
+								}
+							],
+							"_key": "k4"
+						}
+					]
+				},
+				"taxonomies": {
+					"tag": [
+						"color",
+						"generative"
+					]
+				}
+			},
+			{
+				"id": "pixel-art",
+				"slug": "pixel-art",
+				"status": "published",
+				"data": {
+					"title": "文字でドット絵",
+					"language": "python",
+					"code": "# 文字で描いたドット絵を、PNG 画像にする\nfrom PIL import Image\n\nART = \"\"\"\n..####..\n.#....#.\n#.#..#.#\n#......#\n#.#..#.#\n#..##..#\n.#....#.\n..####..\n\"\"\"\n\nCOLORS = {\"#\": (29, 26, 22), \".\": (255, 210, 63)}\nSCALE = 16\n\nrows = ART.strip().splitlines()\nimg = Image.new(\"RGB\", (len(rows[0]) * SCALE, len(rows) * SCALE))\nfor y, row in enumerate(rows):\n    for x, ch in enumerate(row):\n        for dy in range(SCALE):\n            for dx in range(SCALE):\n                img.putpixel((x * SCALE + dx, y * SCALE + dy), COLORS[ch])\n\nimg.save(\"smile.png\")\n",
+					"runnable": false,
+					"summary": "# と . で描いたドット絵を PNG にする小さなスクリプト。",
+					"note": "にっこり",
+					"sticker": "👾",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "# と . で描いたドット絵を PNG にする小さなスクリプト。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ポイント",
+									"_key": "k3"
+								}
+							],
+							"_key": "k2"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ここに解説を書きます。管理画面から書き換えられます。",
+									"_key": "k5"
+								}
+							],
+							"_key": "k4"
+						}
+					]
+				},
+				"taxonomies": {
+					"tag": [
+						"drawing"
 					]
 				}
 			}

@@ -1,0 +1,141 @@
+---
+/**
+ * 本文に貼るステッカー。
+ * - 丸・クッキー・おひさま・お花：M3E の形。ホバーで別の形にモーフする
+ * - 吹き出し・ラベル：文章として読める形
+ * 「飾り」にしたものは読み上げない（aria-hidden）。
+ */
+import { stickerColors, stickerShapes, type StickerShape } from "../options";
+
+interface Props {
+	node: {
+		_key?: string;
+		id?: string;
+		text?: string;
+		shape?: string;
+		color?: string;
+		decorative?: boolean;
+	};
+}
+
+const { node } = Astro.props;
+const text = (node.id ?? node.text ?? "").trim();
+const shape: StickerShape = stickerShapes.some((s) => s.value === node.shape)
+	? (node.shape as StickerShape)
+	: "cookie";
+const color = stickerColors.find((c) => c.value === node.color)?.css ?? "var(--c-yellow)";
+const decorative = node.decorative !== false;
+
+// 形ごとに、ホバーしたときの行き先の形を決める
+const morphTo: Record<string, string> = {
+	cookie: "sunny",
+	sunny: "flower",
+	flower: "cookie",
+	circle: "cookie",
+};
+const isShaped = shape in morphTo;
+// key から傾きを決める（表示のたびに変わらないように）
+const seed = Array.from(node._key ?? text).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+const tilt = (seed % 13) - 6;
+---
+
+{
+	text && (
+		<div
+			class:list={["sticker-block", `sticker-block--${isShaped ? "shape" : shape}`]}
+			style={`--st-color: ${color}; --st-tilt: ${tilt}deg; --shape-from: var(--shape-${shape}); --shape-to: var(--shape-${morphTo[shape] ?? "sunny"})`}
+			aria-hidden={decorative ? "true" : undefined}
+		>
+			{
+				isShaped ? (
+					<span class="morph-host st-shape-host">
+						<span class="morph st-shape" />
+						<span class="st-shape-text">{text}</span>
+					</span>
+				) : (
+					<p class="st-text">{text}</p>
+				)
+			}
+		</div>
+	)
+}
+
+<style>
+	.sticker-block {
+		margin: 1.5em 0;
+		display: flex;
+	}
+
+	/* M3E の形のステッカー */
+	.st-shape-host {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 7.5rem;
+		aspect-ratio: 1;
+		rotate: calc(var(--st-tilt) * var(--wobble));
+		filter: drop-shadow(2px 3px 0 rgb(0 0 0 / 0.25));
+	}
+
+	.st-shape {
+		position: absolute;
+		inset: 0;
+		background: var(--st-color);
+	}
+
+	.st-shape-text {
+		position: relative;
+		max-width: 80%;
+		font-family: var(--font-heading);
+		font-size: 1rem;
+		line-height: 1.25;
+		text-align: center;
+		color: var(--c-ink);
+	}
+
+	/* 吹き出し */
+	.sticker-block--bubble .st-text {
+		position: relative;
+		max-width: 28rem;
+		padding: 0.8rem 1.3rem;
+		font-family: var(--font-hand);
+		font-size: var(--font-size-lg);
+		line-height: 1.6;
+		color: var(--c-ink);
+		background: #fff;
+		border: 3px solid var(--c-ink);
+		border-radius: 24px;
+		box-shadow: 4px 4px 0 var(--st-color);
+		rotate: calc(var(--st-tilt) * 0.4 * var(--wobble));
+		transition: rotate var(--spring), border-radius var(--spring);
+	}
+
+	.sticker-block--bubble .st-text::after {
+		content: "";
+		position: absolute;
+		left: 2rem;
+		bottom: -14px;
+		width: 22px;
+		height: 22px;
+		background: #fff;
+		border-right: 3px solid var(--c-ink);
+		border-bottom: 3px solid var(--c-ink);
+		rotate: 45deg;
+	}
+
+	.sticker-block--bubble .st-text:hover {
+		rotate: 0deg;
+		border-radius: 12px;
+	}
+
+	/* ラベルテープ */
+	.sticker-block--label .st-text {
+		padding: 0.35rem 1rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		color: #fff;
+		background: var(--c-ink);
+		box-shadow: 4px 4px 0 var(--st-color);
+		rotate: calc(var(--st-tilt) * 0.5 * var(--wobble));
+	}
+</style>

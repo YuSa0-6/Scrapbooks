@@ -1,0 +1,268 @@
+---
+/**
+ * コードのカード。印刷した紙をテープで貼ったような見た目。
+ * - runnable（動かして見せる）なら、安全な枠（sandbox iframe）の中で実際に動かす
+ * - それ以外は先頭の数行を、色つき（シンタックスハイライト）で見せる
+ */
+import type { EditProxy } from "emdash";
+import Highlight from "./Highlight.astro";
+import {
+	excerptLines,
+	languageLabel,
+	stickerColor,
+	tapeColor,
+	tiltFor,
+	transitionName,
+} from "../lib/pieces";
+
+interface Props {
+	dbId: string;
+	title: string;
+	href: string;
+	language: string;
+	code: string;
+	runnable?: boolean;
+	summary?: string;
+	note?: string;
+	sticker?: string;
+	tilt?: number;
+	tags?: string[];
+	edit?: EditProxy;
+	headingLevel?: "h2" | "h3";
+}
+
+const {
+	dbId,
+	title,
+	href,
+	language,
+	code,
+	runnable,
+	summary,
+	note,
+	sticker,
+	tilt,
+	tags,
+	edit,
+	headingLevel: Heading = "h2",
+} = Astro.props;
+const allTags = tags || [];
+const live = runnable && language === "html";
+const cardStyle = [
+	`--tilt: ${tiltFor(dbId, tilt)}deg`,
+	`--tape-color: ${tapeColor(dbId)}`,
+	`--tape-rot: ${(dbId.length % 2 === 0 ? 4 : -5)}deg`,
+	`--sticker-bg: ${stickerColor(dbId)}`,
+].join("; ");
+---
+
+<article class="code-card tape" style={cardStyle}>
+	<a href={href} class="card-link">
+		<div class="code-head">
+			<span class="lang-tape">{languageLabel(language)}</span>
+			{live && <span class="live-badge">動く</span>}
+		</div>
+		<div class="code-view code-paper" style={`view-transition-name: ${transitionName("code", dbId)}`}>
+			{
+				live ? (
+					<iframe
+						class="live-frame"
+						title={`${title} の動いている様子`}
+						srcdoc={code}
+						sandbox="allow-scripts"
+						tabindex="-1"
+						aria-hidden="true"
+					/>
+				) : (
+					<Highlight code={excerptLines(code)} language={language} />
+				)
+			}
+		</div>
+		<div class="card-body">
+			<Heading class="card-title" {...edit?.title}>{title}</Heading>
+			{
+				summary && (
+					<p class="card-summary" {...edit?.summary}>
+						{summary}
+					</p>
+				)
+			}
+			{
+				note && (
+					<p class="card-note hand" {...edit?.note}>
+						{note}
+					</p>
+				)
+			}
+			{
+				allTags.length > 0 && (
+					<ul class="card-tags" aria-label="タグ">
+						{allTags.map((tag) => (
+							<li>#{tag}</li>
+						))}
+					</ul>
+				)
+			}
+		</div>
+	</a>
+	{
+		sticker && (
+			<span class="sticker card-sticker" aria-hidden="true" {...edit?.sticker}>
+				{sticker}
+			</span>
+		)
+	}
+</article>
+
+<style>
+	.code-card {
+		position: relative;
+		rotate: calc(var(--tilt) * var(--wobble));
+		transition:
+			rotate var(--spring),
+			translate var(--spring),
+			scale var(--spring);
+	}
+
+	.code-card:hover,
+	.code-card:focus-within {
+		rotate: 0deg;
+		translate: 0 -6px;
+		scale: 1.03;
+		z-index: 5;
+	}
+
+	.card-link {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		padding: 14px;
+		color: var(--color-text);
+		text-decoration: none;
+		/* 方眼の印刷用紙 */
+		background-color: var(--color-surface);
+		background-image:
+			linear-gradient(var(--color-grid) 1px, transparent 1px),
+			linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+		background-size: 12px 12px;
+		box-shadow: var(--shadow-paper);
+		transition: box-shadow var(--spring);
+	}
+
+	.code-card:hover .card-link,
+	.code-card:focus-within .card-link {
+		box-shadow: var(--shadow-lift);
+	}
+
+	.card-link:focus-visible {
+		outline-offset: 6px;
+	}
+
+	.code-head {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.lang-tape {
+		padding: 2px 10px;
+		font-family: var(--font-mono);
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		color: #fff;
+		background: var(--c-ink);
+		box-shadow: 2px 2px 0 var(--tape-color);
+	}
+
+	.live-badge {
+		padding: 2px 10px;
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		color: var(--c-ink);
+		background: var(--c-green);
+		border-radius: 999px;
+	}
+
+	.code-view {
+		overflow: hidden;
+		max-height: 15rem;
+		padding: var(--spacing-sm) var(--spacing-md);
+		background: var(--color-surface);
+		border: 2px solid var(--color-text);
+		border-radius: 12px;
+		transition: border-radius var(--spring);
+	}
+
+	.code-card:hover .code-view {
+		border-radius: 24px;
+	}
+
+	.code-view :global(.shiki) {
+		font-size: 0.78rem;
+		line-height: 1.6;
+		overflow: hidden;
+	}
+
+	.live-frame {
+		display: block;
+		width: calc(100% + 2 * var(--spacing-md));
+		margin: calc(-1 * var(--spacing-sm)) calc(-1 * var(--spacing-md));
+		aspect-ratio: 16 / 10;
+		border: 0;
+		pointer-events: none;
+	}
+
+	.card-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+		padding: var(--spacing-md) var(--spacing-xs) var(--spacing-xs);
+	}
+
+	.card-title {
+		font-size: var(--font-size-xl);
+		line-height: 1.3;
+		transition: color var(--fade-fast);
+	}
+
+	.code-card:hover .card-title {
+		color: var(--color-brand);
+	}
+
+	.card-summary {
+		font-size: var(--font-size-sm);
+		line-height: 1.7;
+		color: var(--color-muted);
+	}
+
+	.card-note {
+		font-size: var(--font-size-lg);
+		color: var(--color-brand);
+		rotate: calc(-1.5deg * var(--wobble));
+	}
+
+	.card-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-xs) var(--spacing-sm);
+		margin-top: var(--spacing-xs);
+		list-style: none;
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		color: light-dark(#1f6f80, #7fd3e3);
+	}
+
+	.card-sticker {
+		position: absolute;
+		top: -14px;
+		right: -14px;
+		z-index: 3;
+		pointer-events: none;
+	}
+
+	.code-card:hover .card-sticker {
+		rotate: calc(-20deg * var(--wobble));
+		scale: 1.15;
+	}
+</style>

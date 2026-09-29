@@ -1,13 +1,17 @@
 ---
 /**
- * 作品カード。ポラロイド写真をテープで貼ったような見た目。
- * 傾きは index で決め、ホバー・フォーカスでまっすぐに戻す。
+ * 絵のカード。
+ * - frame が polaroid（または空）：テープで貼ったポラロイド写真
+ * - それ以外：M3E の形に切り抜いたダイカットシール。ホバーで別の形にモーフする
  * カード全体を 1 つのリンクにして、押せる範囲を広く取る。
  */
 import type { EditProxy, MediaValue } from "emdash";
 import { Image } from "emdash/ui";
+import { isShapeName } from "../lib/shapes";
+import { stickerColor, tapeColor, tiltFor, transitionName } from "../lib/pieces";
 
 interface Props {
+	dbId: string;
 	title: string;
 	summary?: string;
 	featuredImage: MediaValue;
@@ -16,13 +20,15 @@ interface Props {
 	year?: string;
 	note?: string;
 	sticker?: string;
+	frame?: string;
+	tilt?: number;
 	tags?: string[];
 	edit?: EditProxy;
-	index?: number;
 	headingLevel?: "h2" | "h3";
 }
 
 const {
+	dbId,
 	title,
 	summary,
 	featuredImage,
@@ -31,28 +37,37 @@ const {
 	year,
 	note,
 	sticker,
+	frame,
+	tilt,
 	tags,
 	edit,
-	index = 0,
 	headingLevel: Heading = "h2",
 } = Astro.props;
 const allTags = tags || [];
+const shaped = frame && frame !== "polaroid" && isShapeName(frame) ? frame : null;
 
-const tilts = [-3, 2.5, -1.5, 3.5, -2.5, 1.5];
-const tapes = ["var(--c-yellow)", "var(--c-pink)", "var(--c-cyan)", "var(--c-green)"];
-const stickerColors = ["var(--c-pink)", "var(--c-yellow)", "var(--c-green)", "var(--c-purple)"];
+// 形ごとに、ホバーしたときの行き先の形
+const morphTo: Record<string, string> = {
+	cookie: "flower",
+	flower: "sunny",
+	sunny: "cookie",
+	clover: "squircle",
+	circle: "cookie",
+};
+
 const cardStyle = [
-	`--tilt: ${tilts[index % tilts.length]}deg`,
-	`--tape-color: ${tapes[index % tapes.length]}`,
-	`--tape-rot: ${index % 2 === 0 ? -5 : 4}deg`,
-	`--sticker-bg: ${stickerColors[index % stickerColors.length]}`,
+	`--tilt: ${tiltFor(dbId, tilt)}deg`,
+	`--tape-color: ${tapeColor(dbId)}`,
+	`--tape-rot: ${(dbId.length % 2 === 0 ? -5 : 4)}deg`,
+	`--sticker-bg: ${stickerColor(dbId)}`,
+	shaped ? `--shape-from: var(--shape-${shaped}); --shape-to: var(--shape-${morphTo[shaped] ?? "sunny"})` : "",
 ].join("; ");
 ---
 
-<article class="project-card tape" style={cardStyle}>
-	<a href={href} class="card-link">
-		<div class="card-photo" {...edit?.featured_image}>
-			<Image image={featuredImage} />
+<article class:list={["art-card", shaped ? "art-card--shaped" : "art-card--polaroid tape"]} style={cardStyle}>
+	<a href={href} class="card-link morph-host">
+		<div class="card-photo" style={`view-transition-name: ${transitionName("art", dbId)}`} {...edit?.featured_image}>
+			{shaped ? <div class="morph photo-shape"><Image image={featuredImage} /></div> : <Image image={featuredImage} />}
 		</div>
 		<div class="card-body">
 			<Heading class="card-title" {...edit?.title}>{title}</Heading>
@@ -100,20 +115,20 @@ const cardStyle = [
 </article>
 
 <style>
-	.project-card {
+	.art-card {
 		position: relative;
 		rotate: calc(var(--tilt) * var(--wobble));
 		transition:
-			rotate var(--transition-slow),
-			translate var(--transition-slow),
-			scale var(--transition-slow);
+			rotate var(--spring),
+			translate var(--spring),
+			scale var(--spring);
 	}
 
-	.project-card:hover,
-	.project-card:focus-within {
+	.art-card:hover,
+	.art-card:focus-within {
 		rotate: 0deg;
 		translate: 0 -6px;
-		scale: 1.02;
+		scale: 1.03;
 		z-index: 5;
 	}
 
@@ -121,24 +136,28 @@ const cardStyle = [
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		padding: 12px 12px 0;
-		background: #fffdf7;
 		color: var(--c-ink);
 		text-decoration: none;
-		box-shadow: var(--shadow-paper);
-		transition: box-shadow var(--transition-slow);
-	}
-
-	.project-card:hover .card-link,
-	.project-card:focus-within .card-link {
-		box-shadow: var(--shadow-lift);
 	}
 
 	.card-link:focus-visible {
 		outline-offset: 6px;
 	}
 
-	.card-photo {
+	/* ポラロイド */
+	.art-card--polaroid .card-link {
+		padding: 12px 12px 0;
+		background: #fffdf7;
+		box-shadow: var(--shadow-paper);
+		transition: box-shadow var(--spring);
+	}
+
+	.art-card--polaroid:hover .card-link,
+	.art-card--polaroid:focus-within .card-link {
+		box-shadow: var(--shadow-lift);
+	}
+
+	.art-card--polaroid .card-photo {
 		overflow: hidden;
 		background: #ddd;
 	}
@@ -147,7 +166,30 @@ const cardStyle = [
 		width: 100%;
 		aspect-ratio: 4 / 3;
 		object-fit: cover;
-		filter: saturate(1.05) contrast(1.02);
+	}
+
+	/* ダイカットシール：形に切り抜いて、白いふちと影をつける */
+	.art-card--shaped .card-photo {
+		padding: 6px;
+		filter: drop-shadow(4px 0 0 #fff) drop-shadow(-4px 0 0 #fff) drop-shadow(0 4px 0 #fff)
+			drop-shadow(0 -4px 0 #fff) drop-shadow(3px 6px 0 rgb(0 0 0 / 0.22));
+	}
+
+	.photo-shape {
+		--morph-rot: 6deg;
+		--morph-scale: 1.02;
+	}
+
+	.photo-shape :global(img) {
+		aspect-ratio: 1;
+	}
+
+	.art-card--shaped .card-body {
+		margin-top: 10px;
+		padding: var(--spacing-md);
+		background: #fffdf7;
+		box-shadow: var(--shadow-paper);
+		rotate: calc(var(--tilt) * -0.6 * var(--wobble));
 	}
 
 	.card-body {
@@ -160,9 +202,10 @@ const cardStyle = [
 	.card-title {
 		font-size: var(--font-size-xl);
 		line-height: 1.3;
+		transition: color var(--fade-fast);
 	}
 
-	.project-card:hover .card-title {
+	.art-card:hover .card-title {
 		color: #c2185b;
 	}
 
@@ -202,5 +245,10 @@ const cardStyle = [
 		right: -14px;
 		z-index: 3;
 		pointer-events: none;
+	}
+
+	.art-card:hover .card-sticker {
+		rotate: calc(-20deg * var(--wobble));
+		scale: 1.15;
 	}
 </style>

@@ -7,18 +7,15 @@ import {
 	getTermsForEntries,
 } from "emdash";
 import Base from "../../layouts/Base.astro";
-import ArtCard from "../../components/ArtCard.astro";
+import CodeCard from "../../components/CodeCard.astro";
 import RansomTitle from "../../components/RansomTitle.astro";
 
-// Get filter from query param. When set, push the filter down to the
-// database via `where` instead of loading every project and filtering
-// in JS — that pattern scales O(projects × terms-per-project) and
-// blows up the moment you have more than a couple of dozen entries.
+// タグの絞り込みは DB 側（where）で行う。全部読んでから JS で絞ると、件数が増えたときに重くなるため
 const activeTag = Astro.url.searchParams.get("tag");
 const cursor = Astro.url.searchParams.get("cursor") ?? undefined;
 
-const [projectsResult, tagsResult] = await Promise.all([
-	getEmDashCollection("projects", {
+const [snippetsResult, tagsResult] = await Promise.all([
+	getEmDashCollection("snippets", {
 		orderBy: { published_at: "desc" },
 		limit: 12,
 		cursor,
@@ -26,50 +23,50 @@ const [projectsResult, tagsResult] = await Promise.all([
 	}),
 	getTaxonomyTermsWithCacheHint("tag", { includeCounts: false }),
 ]);
-if (projectsResult.error) {
-	return new Response("Could not load the portfolio", { status: 500 });
+if (snippetsResult.error) {
+	return new Response("Could not load the code", { status: 500 });
 }
 
-const { entries: sortedProjects, nextCursor } = projectsResult;
+const { entries: sortedSnippets, nextCursor } = snippetsResult;
 const tags = tagsResult.data;
 if (Astro.cache?.enabled) {
-	Astro.cache.set(projectsResult.cacheHint);
+	Astro.cache.set(snippetsResult.cacheHint);
 	Astro.cache.set(tagsResult.cacheHint);
 }
 
 // Single batched JOIN for the tag pills shown on each card, instead of
 // one getEntryTerms() round-trip per card.
 const tagsByEntry = await getTermsForEntries(
-	"projects",
-	sortedProjects.map((p) => p.data.id),
+	"snippets",
+	sortedSnippets.map((p) => p.data.id),
 	"tag",
 );
-const projectsWithTags = sortedProjects.map((project) => ({
-	project,
-	projectTags: tagsByEntry.get(project.data.id) ?? [],
+const snippetsWithTags = sortedSnippets.map((snippet) => ({
+	snippet,
+	snippetTags: tagsByEntry.get(snippet.data.id) ?? [],
 }));
 
-function workUrl(next: string): string {
+function codeUrl(next: string): string {
 	const params = new URLSearchParams({ cursor: next });
 	if (activeTag) params.set("tag", activeTag);
-	return `/work?${params.toString()}`;
+	return `/code?${params.toString()}`;
 }
 ---
 
 <Base
 	title={activeTag
-		? `${tags.find((t) => t.slug === activeTag)?.label || activeTag} — 絵`
-		: "絵"}
+		? `${tags.find((t) => t.slug === activeTag)?.label || activeTag} — コード`
+		: "コード"}
 >
-	<section class="work-header">
-		<RansomTitle text="ART" size="lg" />
-		<p class="work-intro hand">描いたもの、ぜんぶここに貼ってあります。</p>
+	<section class="code-header">
+		<RansomTitle text="CODE" size="lg" />
+		<p class="code-intro hand">好きなコード、書いたコード。動くものは動かして見られます。</p>
 
 		{
 			tags.length > 0 && (
 				<nav class="tag-filters" aria-label="タグで絞り込む">
 					<a
-						href="/work"
+						href="/code"
 						class:list={["tag-filter", { active: !activeTag }]}
 						aria-current={!activeTag ? "page" : undefined}
 					>
@@ -77,7 +74,7 @@ function workUrl(next: string): string {
 					</a>
 					{tags.map((tag, i) => (
 						<a
-							href={`/work?tag=${tag.slug}`}
+							href={`/code?tag=${tag.slug}`}
 							class:list={["tag-filter", { active: activeTag === tag.slug }]}
 							aria-current={activeTag === tag.slug ? "page" : undefined}
 							style={`--r: ${(i % 3) * 2 - 2}deg`}
@@ -91,24 +88,23 @@ function workUrl(next: string): string {
 	</section>
 
 	{
-		projectsWithTags.length > 0 ? (
-			<section class="projects" aria-label="絵の一覧">
+		snippetsWithTags.length > 0 ? (
+			<section class="projects" aria-label="コードの一覧">
 				<div class="projects-grid">
-					{projectsWithTags.map(({ project, projectTags }) => (
-						<ArtCard
-							dbId={project.data.id}
-							title={project.data.title}
-							summary={project.data.summary}
-							featuredImage={project.data.featured_image}
-							href={`/work/${project.id}`}
-							client={project.data.client}
-							year={project.data.year}
-							note={project.data.note}
-							sticker={project.data.sticker}
-							frame={project.data.frame}
-							tilt={project.data.tilt}
-							tags={projectTags.map((t) => t.label)}
-							edit={project.edit}
+					{snippetsWithTags.map(({ snippet, snippetTags }) => (
+						<CodeCard
+							dbId={snippet.data.id}
+							title={snippet.data.title}
+							href={`/code/${snippet.id}`}
+							language={snippet.data.language}
+							code={snippet.data.code}
+							runnable={snippet.data.runnable}
+							summary={snippet.data.summary}
+							note={snippet.data.note}
+							sticker={snippet.data.sticker}
+							tilt={snippet.data.tilt}
+							tags={snippetTags.map((t) => t.label)}
+							edit={snippet.edit}
 						/>
 					))}
 				</div>
@@ -117,16 +113,16 @@ function workUrl(next: string): string {
 			<section class="empty-state paper tape">
 				{activeTag ? (
 					<>
-						<p>このタグの絵はまだありません。</p>
-						<a href="/work" class="btn-label">
+						<p>このタグのコードはまだありません。</p>
+						<a href="/code" class="btn-label">
 							ぜんぶ見る
 						</a>
 					</>
 				) : (
 					<>
-						<p>まだ絵がありません。管理画面から追加しましょう。</p>
-						<a href="/_emdash/admin/content/projects/new" class="btn-label">
-							絵を追加する
+						<p>まだコードがありません。管理画面から追加しましょう。</p>
+						<a href="/_emdash/admin/content/snippets/new" class="btn-label">
+							コードを追加する
 						</a>
 					</>
 				)}
@@ -137,7 +133,7 @@ function workUrl(next: string): string {
 	{
 		nextCursor && (
 			<nav class="pagination" aria-label="ページ送り">
-				<a href={workUrl(nextCursor)} rel="next" class="btn-label">
+				<a href={codeUrl(nextCursor)} rel="next" class="btn-label">
 					次のページをめくる →
 				</a>
 			</nav>
@@ -146,14 +142,14 @@ function workUrl(next: string): string {
 </Base>
 
 <style>
-	.work-header {
+	.code-header {
 		max-width: var(--wide-width);
 		margin: 0 auto;
 		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-2xl);
 		text-align: center;
 	}
 
-	.work-intro {
+	.code-intro {
 		margin-top: var(--spacing-lg);
 		font-size: var(--font-size-xl);
 		color: var(--color-muted);
@@ -205,7 +201,7 @@ function workUrl(next: string): string {
 
 	.projects-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
 		gap: var(--spacing-3xl) var(--spacing-2xl);
 	}
 
