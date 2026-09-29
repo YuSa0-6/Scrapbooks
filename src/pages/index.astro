@@ -101,7 +101,7 @@ const tagline = settings?.tagline || "絵とコードの切り抜き帳";
 						ボード
 					</h2>
 				</header>
-				<Board pieces={pieces} label="絵とコードの切り抜き" />
+				<Board pieces={pieces} label="絵とコードの切り抜き" isAdmin={Boolean(Astro.locals.user)} />
 			</section>
 		) : (
 			<section class="empty-state paper tape">

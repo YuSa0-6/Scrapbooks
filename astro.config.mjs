@@ -1,6 +1,7 @@
 import cloudflare from "@astrojs/cloudflare";
 import react from "@astrojs/react";
-import { d1, r2 } from "@emdash-cms/cloudflare";
+import { d1, r2, sandbox } from "@emdash-cms/cloudflare";
+import boardLayout from "board-layout";
 import { defineConfig, fontProviders } from "astro/config";
 import emdash from "emdash/astro";
 import { stickerPlugin } from "./src/plugins/sticker/descriptor.ts";
@@ -19,6 +20,9 @@ export default defineConfig({
 			storage: r2({ binding: "MEDIA" }),
 			// 本文にステッカーを貼るブロック（src/plugins/sticker）
 			plugins: [stickerPlugin()],
+			// 並べ方を公開するプラグイン（plugins/board-layout）。Worker Loader の隔離の中で動かす
+			sandboxed: [boardLayout],
+			sandboxRunner: sandbox(),
 		}),
 	],
 	fonts: [

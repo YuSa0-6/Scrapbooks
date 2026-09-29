@@ -1,0 +1,18 @@
+{
+	"$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+
+	"slug": "board-layout",
+	"publisher": "did:web:example.com",
+
+	"license": "MIT",
+	"author": { "name": "YuSa0-6" },
+	"security": { "url": "https://github.com/YuSa0-6/Scrapbooks/security" },
+	"description": "ボードで並べたカードの位置を、絵とコードに書き込んで公開する",
+
+	// 信頼の約束：このプラグインが使う権限。
+	// 絵とコードの board_x / board_y を書き換えて公開するので、この 3 つだけ求める。
+	// 変えるときは version を上げる（入れた人は古い約束に同意しているため）。
+	"capabilities": ["content:read", "content:write", "content:publish"],
+	"allowedHosts": [],
+	"storage": {}
+}

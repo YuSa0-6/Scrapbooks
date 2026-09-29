@@ -7,20 +7,24 @@
     "seed": "seed/seed.json"
   },
   "scripts": {
+    "predev": "pnpm --dir plugins/board-layout build",
     "dev": "astro dev",
+    "prebuild": "pnpm --dir plugins/board-layout build",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "astro build && wrangler deploy",
+    "deploy": "pnpm build && wrangler deploy",
+    "pretypecheck": "pnpm --dir plugins/board-layout build",
     "typecheck": "astro check",
     "check:docs": "node scripts/check-okf.mjs",
     "perf": "node scripts/perf.mjs",
-    "verify": "astro check && node scripts/check-okf.mjs"
+    "verify": "pnpm typecheck && node scripts/check-okf.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.1",
     "@astrojs/react": "^6.0.5",
     "@emdash-cms/cloudflare": "^1.0.1",
     "astro": "^7.3.2",
+    "board-layout": "workspace:*",
     "effect": "3.22.2",
     "emdash": "^1.0.1",
     "react": "19.2.4",

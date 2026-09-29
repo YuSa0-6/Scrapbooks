@@ -2,11 +2,30 @@
 /**
  * M3E の FAB メニュー。右下の丸いボタンを押すと、操作の一覧がばねで広がる。
  * ボード（Board.astro）にイベントを送るだけで、自分では配置を持たない。
+ * 管理者（isAdmin）のときだけ、「この並べ方を公開する」の項目と結果の表示（role="status"）を足す。
  */
+interface Props {
+	/** Base.astro と同じ判定：Astro.locals.user があるか */
+	isAdmin?: boolean;
+}
+
+const { isAdmin = false } = Astro.props;
 ---
 
 <div class="fab-menu" data-fab>
 	<ul class="fab-items" id="fab-items" data-fab-items>
+		{
+			isAdmin && (
+				<li style="--n: 3">
+					<button type="button" class="fab-item" data-action="publish" data-free-only>
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M12 16V4M7 9l5-5 5 5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+						</svg>
+						この並べ方を公開する
+					</button>
+				</li>
+			)
+		}
 		<li style="--n: 2">
 			<button type="button" class="fab-item" data-action="shuffle" data-free-only>
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c2 0 3.2 1 4.3 2.7l2.4 4.6C14.3 16 15.5 17 17.5 17H21M17.5 14 21 17l-3.5 3M3 17h3.5c1.3 0 2.2-.4 3-1.2M13.5 8.2c.8-.8 1.7-1.2 3-1.2H21M17.5 4 21 7l-3.5 3"></path></svg>
@@ -26,6 +45,7 @@
 			</button>
 		</li>
 	</ul>
+	{isAdmin && <p class="fab-status" role="status" data-fab-status />}
 	<button
 		type="button"
 		class="fab"
@@ -49,9 +69,31 @@
 
 	toggle?.addEventListener("click", () => setOpen(!fab?.classList.contains("is-open")));
 
+	// 並べ方の公開：押されたときに初めて読み込む（見る人の JS には入らない）
+	const status = fab?.querySelector<HTMLElement>("[data-fab-status]") ?? null;
+	let publishing = false;
+	async function publish(button: HTMLButtonElement) {
+		if (publishing) return;
+		publishing = true;
+		button.setAttribute("aria-disabled", "true");
+		try {
+			const { publishBoardLayout } = await import("../scripts/board/publish");
+			await publishBoardLayout(status);
+		} catch {
+			if (status) status.textContent = "公開の準備ができませんでした。ページを開きなおしてください";
+		} finally {
+			publishing = false;
+			button.removeAttribute("aria-disabled");
+		}
+	}
+
 	fab?.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((button) => {
 		button.addEventListener("click", () => {
-			document.dispatchEvent(new CustomEvent(`board:${button.dataset.action}`));
+			if (button.dataset.action === "publish") {
+				void publish(button);
+			} else {
+				document.dispatchEvent(new CustomEvent(`board:${button.dataset.action}`));
+			}
 			setOpen(false);
 			toggle?.focus();
 		});
@@ -213,6 +255,36 @@
 
 	.fab-item:hover {
 		background: #3a332c;
+	}
+
+	.fab-item[aria-disabled="true"] {
+		opacity: 0.6;
+		cursor: progress;
+	}
+
+	/* 結果の表示：FAB の左に出す。動かすのは opacity だけ */
+	.fab-status {
+		position: absolute;
+		right: calc(64px + var(--spacing-md));
+		bottom: var(--spacing-sm);
+		width: max-content;
+		max-width: min(320px, calc(100vw - 64px - var(--spacing-lg) * 3));
+		padding: var(--spacing-sm) var(--spacing-md);
+		font-family: var(--font-body);
+		font-size: var(--font-size-base);
+		font-weight: 700;
+		color: var(--c-ink);
+		background: var(--c-yellow);
+		border: 2px solid var(--c-ink);
+		border-radius: 16px;
+		box-shadow: 3px 3px 0 var(--c-ink);
+		opacity: 1;
+		transition: opacity var(--fade-fast);
+		pointer-events: none;
+	}
+
+	.fab-status:empty {
+		opacity: 0;
 	}
 
 	.fab-item:active {
