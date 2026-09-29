@@ -26,30 +26,16 @@ export default defineConfig({
 			sandboxRunner: sandbox(),
 		}),
 	],
+	// 日本語の Web フォントは Klee One 600 の 1 つだけ（見出し・手書きメモ・サイト名）。
+	// 本文・ボタン・メニューは端末の日本語フォントで、src/styles/theme.css の --font-body にある。
+	// 理由と数値は docs/decisions/fonts.md
 	fonts: [
 		{
-			// 見出し用：太くて主張の強いゴシック
 			provider: slimGoogle({ kanjiSlices: 30 }),
-			name: "Dela Gothic One",
-			cssVariable: "--font-heading",
-			weights: [400],
-			fallbacks: ["sans-serif"],
-		},
-		{
-			// 本文用：丸くて読みやすいゴシック
-			provider: slimGoogle({ kanjiSlices: 30 }),
-			name: "Zen Maru Gothic",
-			cssVariable: "--font-body",
-			weights: [400, 700],
-			fallbacks: ["system-ui", "sans-serif"],
-		},
-		{
-			// 手書きメモ用
-			provider: slimGoogle({ kanjiSlices: 30 }),
-			name: "Yomogi",
+			name: "Klee One",
 			cssVariable: "--font-hand",
-			weights: [400],
-			fallbacks: ["cursive"],
+			weights: [600],
+			fallbacks: ["Hiragino Maru Gothic ProN", "Yu Gothic UI", "Noto Sans JP", "sans-serif"],
 		},
 	],
 	devToolbar: { enabled: false },

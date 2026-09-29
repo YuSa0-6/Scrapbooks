@@ -5,7 +5,7 @@ import { Effect } from "effect";
 import { loadCollection, loadTaxonomyTerms, loadTermsForEntries, runPage } from "../../lib/content";
 import Base from "../../layouts/Base.astro";
 import CodeCard from "../../components/CodeCard.astro";
-import RansomTitle from "../../components/RansomTitle.astro";
+import HandTitle from "../../components/HandTitle.astro";
 
 // タグの絞り込みは DB 側（where）で行う。全部読んでから JS で絞ると、件数が増えたときに重くなるため
 const activeTag = Astro.url.searchParams.get("tag");
@@ -63,7 +63,7 @@ function codeUrl(next: string): string {
 		: "コード"}
 >
 	<section class="code-header">
-		<RansomTitle text="CODE" size="lg" />
+		<HandTitle text="CODE" size="lg" />
 		<p class="code-intro hand">好きなコード、書いたコード。動くものは動かして見られます。</p>
 
 		{
@@ -167,7 +167,7 @@ function codeUrl(next: string): string {
 		margin-top: var(--spacing-xl);
 	}
 
-	/* タグはシール。選ばれているものは黒く塗る */
+	/* タグは手描きの枠のシール。選ばれているものは黄色のクレヨンで塗る */
 	.tag-filter {
 		display: inline-flex;
 		align-items: center;
@@ -175,26 +175,25 @@ function codeUrl(next: string): string {
 		padding: 0 var(--spacing-md);
 		font-size: var(--font-size-sm);
 		font-weight: 700;
-		color: var(--c-ink);
+		color: var(--color-text);
 		text-decoration: none;
-		background: #fffdf7;
-		border: 2px solid var(--c-ink);
-		border-radius: 999px;
+		background: var(--color-surface);
+		border: 2px solid var(--color-text);
+		border-radius: var(--hand-radius);
 		rotate: calc(var(--r, 0deg) * var(--wobble));
 		transition:
-			rotate var(--transition-fast),
-			background var(--transition-fast);
+			rotate var(--spring-fast),
+			scale var(--spring-fast);
 	}
 
 	.tag-filter:hover {
 		rotate: 0deg;
-		background: var(--c-yellow);
+		scale: 1.05;
 	}
 
 	.tag-filter.active {
-		color: #fff;
-		background: var(--c-ink);
-		box-shadow: 3px 3px 0 var(--c-pink);
+		color: var(--crayon-ink);
+		background: var(--crayon-yellow);
 	}
 
 	.projects {

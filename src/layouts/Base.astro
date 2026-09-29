@@ -77,9 +77,6 @@ function isCurrent(url: string): boolean {
 	if (url === "/") return currentPath === "/";
 	return currentPath === url || currentPath.startsWith(`${url}/`);
 }
-
-// メニューごとにテープの色を変える
-const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--c-green)"];
 ---
 
 <!doctype html>
@@ -90,9 +87,8 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 		<title>{fullTitle}</title>
 		<EmDashHead page={pageCtx} />
 		<style is:inline set:html={shapeStyles} />
-		<Font cssVariable="--font-heading" preload={[{ subset: "latin" }, { subset: "kana" }]} />
-		<Font cssVariable="--font-body" />
-		<Font cssVariable="--font-hand" />
+		<!-- 日本語の Web フォントは Klee One 600 だけ。preload は半角とかなの面だけ -->
+		<Font cssVariable="--font-hand" preload={[{ subset: "latin" }, { subset: "kana" }]} />
 		<link
 			rel="alternate"
 			type="application/rss+xml"
@@ -124,6 +120,8 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 	<body>
 		<EmDashBodyStart page={pageCtx} />
 		<a href="#main" class="skip-link">本文へ移動</a>
+		<!-- 上端のリング綴じ（飾り） -->
+		<div class="binding" aria-hidden="true"></div>
 		<header class="site-header">
 			<nav class="nav" aria-label="メインメニュー">
 				<a href="/" class="site-title" aria-current={currentPath === "/" ? "page" : undefined}>
@@ -136,7 +134,21 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 							/>
 						) : (
 							<>
-								<span class="site-title-mark" aria-hidden="true">✂</span>
+								<svg
+									class="site-title-mark"
+									width="28"
+									height="28"
+									viewBox="0 0 32 32"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2.2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									aria-hidden="true"
+								>
+									<path d="M6 25 23 8c1.6-1.6 3.8.6 2.2 2.2L8.3 27.1 4.6 28z" />
+									<path d="M20 11l2.4 2.4" />
+								</svg>
 								{siteTitle}
 							</>
 						)
@@ -144,21 +156,40 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 				</a>
 				<ul class="nav-links">
 					{
-						menu?.items.map((item, i) => (
-							<li>
-								<a
-									href={item.url}
-									target={item.target}
-									rel={
-										item.target === "_blank" ? "noopener noreferrer" : undefined
-									}
-									aria-current={isCurrent(item.url) ? "page" : undefined}
-									style={`--tab: ${tapeColors[i % tapeColors.length]}; --i: ${i}`}
-								>
-									{item.label}
-								</a>
-							</li>
-						))
+						menu?.items.map((item) => {
+							const current = isCurrent(item.url);
+							return (
+								<li>
+									<a
+										href={item.url}
+										target={item.target}
+										rel={
+											item.target === "_blank" ? "noopener noreferrer" : undefined
+										}
+										aria-current={current ? "page" : undefined}
+									>
+										{item.label}
+										{current && (
+											<svg
+												class="nav-circle"
+												viewBox="0 0 64 44"
+												preserveAspectRatio="none"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+												stroke-linecap="round"
+												aria-hidden="true"
+											>
+												<path
+													vector-effect="non-scaling-stroke"
+													d="M10 12c14-9 44-7 48 8 4 14-26 20-44 14C0 29 2 14 22 8"
+												/>
+											</svg>
+										)}
+									</a>
+								</li>
+							);
+						})
 					}
 					{
 						isLoggedIn && (
@@ -172,12 +203,12 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 				</ul>
 				<button
 					type="button"
-					class="tidy-toggle"
+					class="tidy-toggle hand-frame"
 					aria-pressed="false"
 					title="傾きや動きを止めて、読みやすく並べ直します"
 				>
-					<span class="tidy-on" aria-hidden="true">🌀 はちゃめちゃ</span>
-					<span class="tidy-off" aria-hidden="true">📐 整頓中</span>
+					<span class="tidy-on" aria-hidden="true">整頓する</span>
+					<span class="tidy-off" aria-hidden="true">整頓中</span>
 					<span class="visually-hidden">整頓モード</span>
 				</button>
 			</nav>
@@ -188,7 +219,23 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 		</main>
 
 		<footer class="site-footer">
-			<div class="footer-content paper tape" style="--tape-color: var(--c-cyan)">
+			<!-- 手で引いた波線（飾り） -->
+			<svg
+				class="footer-line"
+				viewBox="0 0 400 14"
+				preserveAspectRatio="none"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				aria-hidden="true"
+			>
+				<path
+					vector-effect="non-scaling-stroke"
+					d="M2 8c30-6 60 4 96-1s66 5 100 0 66-6 100-1 66 5 100 0"
+				/>
+			</svg>
+			<div class="footer-content">
 				<div class="footer-brand">
 					<span class="footer-logo">
 						{
@@ -209,19 +256,49 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 					<div class="theme-switcher" role="group" aria-label="配色">
 						<button
 							type="button"
-							class="theme-btn"
+							class="theme-btn hand-frame"
 							data-theme="light"
-							aria-pressed="false">☀ 昼</button
+							aria-pressed="false"
 						>
+							<svg
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								aria-hidden="true"
+							>
+								<circle cx="12" cy="12" r="4.2"></circle>
+								<path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"></path>
+							</svg>
+							昼
+						</button>
 						<button
 							type="button"
-							class="theme-btn"
+							class="theme-btn hand-frame hand-frame--alt"
 							data-theme="dark"
-							aria-pressed="false">☾ 夜</button
+							aria-pressed="false"
 						>
+							<svg
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"></path>
+							</svg>
+							夜
+						</button>
 						<button
 							type="button"
-							class="theme-btn"
+							class="theme-btn hand-frame"
 							data-theme="system"
 							aria-pressed="false">端末に合わせる</button
 						>
@@ -304,14 +381,12 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 					padding: 0;
 				}
 
-				@supports (color: light-dark(#000, #fff)) {
-					:root.light {
-						color-scheme: light;
-					}
+				:root.light {
+					color-scheme: light;
+				}
 
-					:root.dark {
-						color-scheme: dark;
-					}
+				:root.dark {
+					color-scheme: dark;
 				}
 
 				html {
@@ -323,7 +398,6 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 					font-size: var(--font-size-base);
 					line-height: var(--leading-normal);
 					color: var(--color-text);
-					background: var(--color-bg);
 					-webkit-font-smoothing: antialiased;
 					min-height: 100vh;
 				}
@@ -377,8 +451,8 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 				left: var(--spacing-md);
 				z-index: 100;
 				padding: var(--spacing-sm) var(--spacing-md);
-				background: var(--c-yellow);
-				color: var(--c-ink);
+				background: var(--crayon-yellow);
+				color: var(--crayon-ink);
 				font-weight: 700;
 			}
 
@@ -386,14 +460,31 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 				top: var(--spacing-md);
 			}
 
-			/* ヘッダー：画面上部に固定。ふせんのインデックスのようなメニュー */
+			/* 上端のリング綴じ：金具と穴を 48px ごとに繰り返す（背景 1 枚。動かさない） */
+			.binding {
+				height: 44px;
+				background:
+					linear-gradient(
+							90deg,
+							transparent 21px,
+							var(--ring-a) 21px,
+							var(--ring-b) 24px,
+							var(--ring-a) 27px,
+							transparent 27px
+						)
+						0 4px / 48px 40px repeat-x,
+					radial-gradient(circle at 50% 100%, var(--ring-hole) 0 6px, transparent 6.5px) 0 0 / 48px 44px repeat-x,
+					var(--color-bg);
+				border-bottom: 1px solid color-mix(in srgb, var(--color-text) 15%, transparent);
+			}
+
+			/* ヘッダー：ページの上に固定。手書きのメニュー */
 			.site-header {
 				position: sticky;
 				top: 0;
 				z-index: 50;
-				background: color-mix(in srgb, var(--color-bg) 88%, transparent);
-				backdrop-filter: blur(6px);
-				border-bottom: 3px dashed color-mix(in srgb, var(--color-text) 25%, transparent);
+				background: color-mix(in srgb, var(--color-paper) 94%, transparent);
+				border-bottom: 1px dashed color-mix(in srgb, var(--color-text) 25%, transparent);
 			}
 
 			.nav {
@@ -411,19 +502,20 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 				gap: 0.4em;
 				min-height: 44px;
 				font-family: var(--font-heading);
-				font-size: var(--font-size-lg);
+				font-weight: var(--font-weight-heading);
+				font-size: 1.5rem;
 				text-decoration: none;
 				white-space: nowrap;
 			}
 
 			.site-title-mark {
-				display: inline-block;
-				color: var(--color-brand);
-				transition: rotate var(--transition-slow);
+				flex: none;
+				color: var(--color-accent);
+				transition: rotate var(--spring);
 			}
 
 			.site-title:hover .site-title-mark {
-				rotate: calc(-30deg * var(--wobble));
+				rotate: calc(-20deg * var(--wobble));
 			}
 
 			.site-logo-img {
@@ -434,66 +526,67 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 			.nav-links {
 				display: flex;
 				flex-wrap: wrap;
-				gap: var(--spacing-sm);
+				gap: var(--spacing-xs);
 				margin-left: auto;
 				list-style: none;
 			}
 
 			.nav-links a {
+				position: relative;
 				display: inline-flex;
 				align-items: center;
 				min-height: 44px;
 				padding: 0 var(--spacing-md);
 				font-family: var(--font-body);
 				font-weight: 700;
-				font-size: var(--font-size-sm);
-				color: var(--c-ink);
+				font-size: var(--font-size-base);
+				color: var(--color-text);
 				text-decoration: none;
-				background: var(--tab);
-				border: 2px solid var(--c-ink);
-				rotate: calc((var(--i) * 3deg - 2deg) * var(--wobble));
-				transition:
-					rotate var(--transition-fast),
-					translate var(--transition-fast),
-					box-shadow var(--transition-fast);
+				transition: translate var(--spring-fast);
 			}
 
 			.nav-links a:hover {
-				rotate: 0deg;
 				translate: 0 -2px;
-				box-shadow: 3px 3px 0 var(--c-ink);
+				text-decoration: underline wavy var(--color-accent) 1.5px;
+				text-underline-offset: 6px;
 			}
 
-			/* 今いるページは黒いラベルにして、ひと目で分かるようにする */
-			.nav-links a[aria-current="page"] {
-				color: #fff;
-				background: var(--c-ink);
-				box-shadow: 3px 3px 0 var(--tab);
+			/* 今いるページは、赤ペンで手描きの丸をつける（線は文字の外側。押せる範囲は変わらない） */
+			.nav-circle {
+				position: absolute;
+				inset: 0 -6px;
+				width: calc(100% + 12px);
+				height: 100%;
+				color: var(--color-accent);
+				pointer-events: none;
 			}
 
 			.nav-links a:empty {
 				display: none;
 			}
 
-			.nav-admin {
-				--tab: #fff;
-			}
-
 			.tidy-toggle {
 				min-height: 44px;
 				padding: 0 var(--spacing-md);
-				font-family: var(--font-hand);
+				font-family: var(--font-body);
+				font-weight: 700;
 				font-size: var(--font-size-sm);
 				color: var(--color-text);
 				background: transparent;
-				border: 2px dashed currentColor;
-				border-radius: 999px;
 				cursor: pointer;
 				white-space: nowrap;
+				transition:
+					translate var(--spring-fast),
+					scale var(--spring-fast);
 			}
 
 			.tidy-toggle:hover {
 				background: var(--color-surface);
+				translate: 0 -1px;
+			}
+
+			.tidy-toggle:active {
+				scale: 0.96;
 			}
 
 			.tidy-off,
@@ -503,6 +596,12 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 
 			:global(.tidy) .tidy-off {
 				display: inline;
+			}
+
+			/* 整頓中は、クレヨンで塗って「押している」ことを見せる */
+			:global(.tidy) .tidy-toggle {
+				color: var(--crayon-ink);
+				background: var(--crayon-blue);
 			}
 
 			main {
@@ -515,17 +614,26 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 				padding: 0 var(--spacing-lg) var(--spacing-2xl);
 			}
 
+			.footer-line {
+				display: block;
+				width: 100%;
+				height: 14px;
+				color: var(--color-muted);
+				opacity: 0.6;
+			}
+
 			.footer-content {
 				display: flex;
 				justify-content: space-between;
 				align-items: flex-start;
 				gap: var(--spacing-xl);
-				rotate: calc(0.6deg * var(--wobble));
+				padding-top: var(--spacing-lg);
 			}
 
 			.footer-logo {
 				font-family: var(--font-heading);
-				font-size: var(--font-size-lg);
+				font-weight: var(--font-weight-heading);
+				font-size: var(--font-size-xl);
 			}
 
 			.footer-logo-img {
@@ -549,29 +657,39 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 			.theme-switcher {
 				display: flex;
 				flex-wrap: wrap;
-				gap: var(--spacing-xs);
+				gap: var(--spacing-sm);
 			}
 
 			.theme-btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4em;
 				min-height: 44px;
 				padding: 0 var(--spacing-md);
 				background: transparent;
-				border: 2px solid var(--color-border);
 				color: var(--color-text);
 				font-family: var(--font-body);
+				font-weight: 700;
 				font-size: var(--font-size-sm);
 				cursor: pointer;
+				transition:
+					translate var(--spring-fast),
+					scale var(--spring-fast);
 			}
 
 			.theme-btn:hover {
-				background: var(--color-bg);
+				background: var(--color-surface);
+				translate: 0 -1px;
 			}
 
+			.theme-btn:active {
+				scale: 0.96;
+			}
+
+			/* 選んでいる配色は、黄色のクレヨンで塗る */
 			.theme-btn.active {
-				color: var(--c-ink);
-				background: var(--c-yellow);
-				border-color: var(--c-ink);
-				font-weight: 700;
+				color: var(--crayon-ink);
+				background: var(--crayon-yellow);
 			}
 
 			.footer-powered {
@@ -604,7 +722,7 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 					margin-left: 0;
 					flex-wrap: nowrap;
 					overflow-x: auto;
-					padding: var(--spacing-xs) 2px var(--spacing-sm);
+					padding: var(--spacing-xs) 8px var(--spacing-sm);
 				}
 
 				.nav-links a {

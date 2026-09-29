@@ -223,7 +223,9 @@ const seo = getSeoMeta(snippet, {
 		align-items: center;
 		min-height: 44px;
 		font-size: var(--font-size-lg);
-		color: var(--color-brand);
+		color: var(--color-text);
+		text-decoration: underline wavy var(--color-accent) 1.5px;
+		text-underline-offset: 6px;
 	}
 
 	.snippet-header {
@@ -239,7 +241,7 @@ const seo = getSeoMeta(snippet, {
 	}
 
 	.snippet-title .marker {
-		--marker: var(--c-cyan);
+		--marker: var(--hl-blue);
 		box-decoration-break: clone;
 		-webkit-box-decoration-break: clone;
 	}

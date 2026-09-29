@@ -3,7 +3,7 @@
  * 表紙のボード。絵とコードの切り抜きを、自由な位置に貼る。
  *
  * - 広い画面：好きな位置に置ける（CMS の board_x / board_y、なければ自動でばらまく）。
- *   マウスでドラッグして動かせて、位置はこの端末（localStorage）に保存する
+ *   マウスでドラッグして動かせて、位置はこの端末（localStorage）に保存する。管理者は FAB から公開できる
  * - せまい画面・整頓モード・JavaScript なし：ふつうの格子に並べる
  * - 並び順（読み上げ・Tab の順番）は、いつも HTML の順番のまま
  * - 動くところは src/scripts/board/ にある（配置・ドラッグ・視差・保存）
@@ -53,7 +53,7 @@ const { pieces, label, isAdmin = false } = Astro.props;
 
 <div class="board-wrap">
 	<p class="board-hint hand" data-board-hint hidden>
-		ドラッグで動かせます（位置はこの端末に保存されます）
+		ドラッグで動かせます（位置はこの端末に保存されます。管理者は FAB から公開できます）
 	</p>
 	<ol class="board" data-board data-pending aria-label={label}>
 		{

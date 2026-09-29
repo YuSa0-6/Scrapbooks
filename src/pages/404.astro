@@ -1,16 +1,16 @@
 ---
 import Base from "../layouts/Base.astro";
-import RansomTitle from "../components/RansomTitle.astro";
+import HandTitle from "../components/HandTitle.astro";
 ---
 
 <Base title="ページが見つかりません">
 	<div class="not-found">
-		<RansomTitle text="404" as="p" />
+		<HandTitle text="404" as="p" />
 		<h1>このページは、どこかへ飛んでいったようです</h1>
 		<p class="hand">風で飛ばされたか、まだ貼っていないページかもしれません。</p>
 		<div class="not-found-links">
 			<a href="/" class="btn-label">表紙にもどる</a>
-			<a href="/work" class="btn-label" style="--btn-bg: var(--c-cyan); --btn-rot: 2deg">
+			<a href="/work" class="btn-label" style="--btn-bg: var(--crayon-blue); --btn-rot: 2deg">
 				作品を見る
 			</a>
 		</div>

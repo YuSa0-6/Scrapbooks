@@ -2,6 +2,9 @@
 
 ## 2026-09-29
 
+- **Changed** 第 3 段階の作業 1：見た目をスケッチブックにした。色トークン（昼・夜）と共通パーツ（手描きの枠・マスキングテープ・写真コーナー・蛍光ペンの見出し）を `theme.css` に、画用紙・リング綴じ・手書きのメニュー（現在地は赤ペンの丸）を `Base.astro` に、大見出しを `HandTitle`（`RansomTitle` は削除）にした。ボードの案内文を今の機能に合わせた（[sketchbook-style](/design/sketchbook-style.md)）
+- **Changed** 日本語の Web フォントを Klee One 600 の 1 つにした。表紙の長いタスクは 1434〜1784ms から 764〜791ms に、フォントのファイルは 148 から 49 になった。長いタスクの予算を 1800ms から 950ms に決め直した（[fonts](/decisions/fonts.md)・[performance](/architecture/performance.md)）
+
 - **Added** スケッチブックの見た目（[sketchbook-style](/design/sketchbook-style.md)）、好きなものの読み込み（[favorites](/architecture/favorites.md)）、第 3 段階の作業（[phase-3](/tasks/phase-3.md)）
 - **Decision** 日本語の Web フォントは Klee One 600 だけにする（[fonts](/decisions/fonts.md)）
 - **Open Question** 持ち主の写真と絵を公開リポジトリに入れてよいか（[private-media](/decisions/private-media.md)）

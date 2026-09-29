@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import { loadCollection, loadSiteSettings, runPage } from "../lib/content";
 import Base from "../layouts/Base.astro";
 import Board, { type BoardPiece } from "../components/Board.astro";
-import RansomTitle from "../components/RansomTitle.astro";
+import HandTitle from "../components/HandTitle.astro";
 
 // 設定と、絵・コードの新しいものを並行して取る。件数と並び順は DB 側で決める
 const loaded = await runPage(
@@ -81,13 +81,53 @@ const tagline = settings?.tagline || "絵とコードの切り抜き帳";
 			<span class="morph hero-shape"></span>
 			<span class="hero-shape-label">{"</>"}</span>
 		</span>
-		<RansomTitle text={siteTitle} />
-		<p class="hero-tagline paper tape">
-			<span class="marker">{tagline}</span>
-		</p>
+		<!-- 余白のらくがき（飾り） -->
+		<svg
+			class="doodle doodle--star"
+			width="70"
+			height="70"
+			viewBox="0 0 70 70"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.4"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			aria-hidden="true"
+		>
+			<path d="M35 6l7 19 20 1-16 12 6 20-17-12-17 12 6-20L8 26l20-1z"></path>
+		</svg>
+		<svg
+			class="doodle doodle--swirl"
+			width="110"
+			height="60"
+			viewBox="0 0 110 60"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.4"
+			stroke-linecap="round"
+			aria-hidden="true"
+		>
+			<path d="M6 40c20-30 40-30 46-10s-22 22-18 0 40-26 70-10"></path>
+			<path d="M92 14l12 6-8 10"></path>
+		</svg>
+		<svg
+			class="doodle doodle--heart"
+			width="48"
+			height="44"
+			viewBox="0 0 48 44"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.4"
+			stroke-linecap="round"
+			aria-hidden="true"
+		>
+			<path d="M24 38C4 26 2 12 12 8c6-2 10 2 12 7 2-5 6-9 12-7 10 4 8 18-12 30z"></path>
+		</svg>
+		<HandTitle text={siteTitle} />
+		<p class="hero-tagline hand">{tagline}</p>
 		<div class="hero-actions">
 			<a href="/work" class="btn-label">絵を見る →</a>
-			<a href="/code" class="btn-label" style="--btn-bg: var(--c-cyan); --btn-rot: 2deg">
+			<a href="/code" class="btn-label btn-label--alt" style="--btn-bg: var(--crayon-blue); --btn-rot: 2deg">
 				コードを見る →
 			</a>
 		</div>
@@ -125,12 +165,34 @@ const tagline = settings?.tagline || "絵とコードの切り抜き帳";
 	}
 
 	.hero-tagline {
-		display: inline-block;
 		margin-top: var(--spacing-xl);
-		padding: var(--spacing-md) var(--spacing-xl);
-		font-size: var(--font-size-lg);
-		font-weight: 700;
-		rotate: calc(-1.5deg * var(--wobble));
+		font-size: clamp(1.25rem, 3vw, 1.5rem);
+	}
+
+	/* 余白のらくがき（赤ペン・青ペン・ピンクのペン）。位置だけ決めて、動かさない */
+	.doodle {
+		position: absolute;
+		pointer-events: none;
+	}
+
+	.doodle--star {
+		top: 4.5rem;
+		left: 24%;
+		color: var(--color-accent);
+		rotate: calc(-14deg * var(--wobble));
+	}
+
+	.doodle--swirl {
+		bottom: 3.5rem;
+		left: 12%;
+		color: color-mix(in srgb, #5b6fa8 55%, var(--color-text));
+	}
+
+	.doodle--heart {
+		top: 5rem;
+		right: 22%;
+		color: color-mix(in srgb, #b5566d 60%, var(--color-text));
+		rotate: calc(10deg * var(--wobble));
 	}
 
 	.hero-actions {
@@ -149,7 +211,6 @@ const tagline = settings?.tagline || "絵とコードの切り抜き帳";
 		background: none;
 		border: 0;
 		box-shadow: none;
-		filter: drop-shadow(2px 3px 0 rgb(0 0 0 / 0.25));
 		pointer-events: auto;
 	}
 
@@ -163,13 +224,13 @@ const tagline = settings?.tagline || "絵とコードの切り抜き帳";
 		position: relative;
 		font-family: var(--font-heading);
 		font-size: 1.6rem;
-		color: var(--c-ink);
+		color: var(--crayon-ink);
 	}
 
 	.hero-sticker--1 {
 		top: var(--spacing-2xl);
 		left: 8%;
-		--sticker-bg: var(--c-yellow);
+		--sticker-bg: var(--crayon-yellow);
 		--shape-from: var(--shape-cookie);
 		--shape-to: var(--shape-flower);
 	}
@@ -177,7 +238,7 @@ const tagline = settings?.tagline || "絵とコードの切り抜き帳";
 	.hero-sticker--2 {
 		bottom: var(--spacing-2xl);
 		right: 8%;
-		--sticker-bg: var(--c-green);
+		--sticker-bg: var(--crayon-sage);
 		--shape-from: var(--shape-clover);
 		--shape-to: var(--shape-sunny);
 		rotate: calc(-18deg * var(--wobble));
@@ -219,6 +280,10 @@ const tagline = settings?.tagline || "絵とコードの切り抜き帳";
 	}
 
 	@media (max-width: 600px) {
+		.doodle {
+			display: none;
+		}
+
 		.hero-sticker {
 			width: 3.5rem;
 			height: 3.5rem;

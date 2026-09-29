@@ -3,7 +3,7 @@ type: Task List
 title: 第 3 段階の作業
 description: スケッチブックの見た目に変え、書体を絞って性能の予算を決め直し、持ち主の好きなものを載せる。
 tags: [tasks]
-generated: { by: claude-code/2.1.284, at: 2026-09-29T09:20:00Z }
+generated: { by: claude-code/2.1.284, at: 2026-09-29T10:00:00Z }
 ---
 
 # 作業
@@ -15,3 +15,9 @@ generated: { by: claude-code/2.1.284, at: 2026-09-29T09:20:00Z }
 | 3 | カードと部品の見た目 | [sketchbook-style](/design/sketchbook-style.md)・[cards](/architecture/cards.md)・[flip-cards](/design/flip-cards.md) | `src/components/ArtCard.astro`・`CodeCard.astro`・`FlipCard.astro`・`FabMenu.astro`、`src/plugins/sticker/astro/Sticker.astro`、詳細ページ・about・contact・404 の見た目 |
 | 4 | 全体の確認 | 予算・a11y・docs | 直すための最小限、docs、README（持ち主の写真が写った画像は入れない） |
 | 5 | 公開 | [deploy](/guides/deploy.md) | Cloudflare の Git 連携（持ち主の操作が要る） |
+
+# 進み具合
+
+| # | 状態 | メモ |
+| --- | --- | --- |
+| 1 | 完了 | Klee One 600 だけの書体、スケッチブックの色トークンと共通パーツ、`Base.astro` の画用紙・リング綴じ・手書きのメニュー、`HandTitle`。表紙の長いタスクは約 790ms（3 書体のときは 1434〜1784ms）。予算は 950ms |

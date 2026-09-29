@@ -1,9 +1,9 @@
 /*
-  theme.css -- スクラップブック風テーマ
+  theme.css -- スケッチブック風テーマ
 
-  方針：「見た目ははちゃめちゃ、操作はまじめ」
-  - 傾き・テープ・ステッカーで遊ぶ
-  - 本文は白い紙の上に置き、文字は大きく、コントラストは高く保つ
+  方針：「見た目はあたたかい手描き、操作はまじめ」（docs/design/sketchbook-style.md）
+  - クリーム色の画用紙に、手描きの線・水彩のにじみ・マスキングテープ・写真コーナーで貼る
+  - 本文は端末の日本語フォント。日本語の Web フォントは Klee One 600 だけ（見出し・手書きメモ）
   - 「整頓モード」（html.tidy）と prefers-reduced-motion では傾きと動きを止める
 
   トークン（色・文字・余白）はこのファイルの :root にまとめる。
@@ -13,39 +13,76 @@
 */
 
 :root {
-	/* 紙とインク */
-	--color-bg: #f3ead7;
-	--color-surface: #fffdf7;
-	--color-text: #1d1a16;
-	--color-muted: #5b5147;
-	--color-border: #1d1a16;
-	--color-grid: rgb(29 26 22 / 0.08);
+	/* 机・画用紙・インク */
+	--color-bg: #efe6d2; /* 机（ページの外） */
+	--color-paper: #f8f2e4; /* 画用紙（ページ） */
+	--color-surface: #fffdf8; /* 貼った紙・写真のふち */
+	--color-text: #3b3128; /* インク（本文） */
+	--color-muted: #6b5b4d; /* 鉛筆（補足） */
+	--color-accent: #b5543c; /* 赤ペン（手書きメモ・現在地の丸） */
 
-	/* 文房具の色（テープ・ステッカー・マーカー） */
-	--c-pink: #ff6fae;
-	--c-yellow: #ffd23f;
-	--c-cyan: #3ec6e0;
-	--c-green: #7bd389;
-	--c-orange: #ff7a3d;
-	--c-purple: #9b7bff;
-	--c-ink: #1d1a16;
+	/* 水彩のにじみ（ページの背景に敷く） */
+	--wash-lilac: rgb(201 182 228 / 0.35);
+	--wash-peach: rgb(242 168 138 / 0.28);
+	--wash-sage: rgb(169 191 154 / 0.22);
 
-	--color-brand: #e0356f;
-	--color-on-brand: #fff;
-	--color-brand-ring: var(--c-cyan);
+	/* クレヨン（ボタン・テープ・シール）。上に乗る文字は --crayon-ink（昼も夜も同じ） */
+	--crayon-yellow: #f4d58d;
+	--crayon-blue: #cfe0f3;
+	--crayon-pink: #eeb4b4;
+	--crayon-sage: #cfe0c3;
+	--crayon-peach: #f5c9b0;
+	--crayon-lilac: #ddd0ef;
+	--crayon-ink: #3b3128;
 
-	/* 文字 */
-	--font-weight-heading: 400;
-	--font-weight-display: 400;
+	/* 蛍光ペンの線（文字の下に敷く）。夜は文字が明るいので、うすく透かす */
+	--hl-yellow: #f4d58d;
+	--hl-blue: #cfe0f3;
+	--hl-pink: #eeb4b4;
+	--hl-sage: #cfe0c3;
+	--hl-line: #e9a23b; /* 見出しの下の蛍光ペンの太い線 */
+
+	/* 紙の質感・罫線・線 */
+	--paper-grain: rgb(59 49 40 / 0.018);
+	--rule-line: rgb(91 111 168 / 0.22); /* 罫線ノートの青い線 */
+	--rule-margin: rgb(199 125 142 / 0.45); /* 罫線ノートの赤い余白線 */
+	--ring-a: #8a8378; /* リング綴じの金具（ふち） */
+	--ring-b: #d9d4cb; /* リング綴じの金具（ハイライト） */
+	--ring-hole: rgb(59 49 40 / 0.8); /* リングを通す穴 */
+	--color-danger: #b3261e;
+
+	/* 古いトークン名（第 1・2 段階のファイル用）。新しい色へ向けている。新しい所では使わない */
+	--c-pink: var(--crayon-pink);
+	--c-yellow: var(--crayon-yellow);
+	--c-cyan: var(--crayon-blue);
+	--c-green: var(--crayon-sage);
+	--c-orange: var(--crayon-peach);
+	--c-purple: var(--crayon-lilac);
+	--c-ink: var(--crayon-ink);
+	--color-brand: var(--color-accent);
+	--color-on-brand: var(--color-surface);
+	--color-brand-ring: var(--crayon-blue);
+	--color-border: var(--color-text);
+	--color-grid: transparent;
+
+	/* 文字：本文は端末の日本語フォント。見出し・手書きは Klee One 600（--font-hand は astro.config.mjs の fonts が作る） */
+	--font-body: system-ui, "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif;
+	--font-heading: var(--font-hand);
+	--font-weight-heading: 600;
+	--font-weight-display: 600;
 	--font-size-base: 1.0625rem;
 	--font-size-4xl: clamp(2.5rem, 7vw, 5rem);
 	--leading-normal: 1.8;
 	--leading-relaxed: 1.9;
 
+	/* 手描きの枠のいびつな角（2 種類。交互に使うと手で描いた感じになる） */
+	--hand-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+	--hand-radius-alt: 15px 255px 15px 225px / 225px 15px 255px 15px;
+
 	/* 形 */
 	--radius: 2px;
-	--shadow-paper: 2px 3px 0 rgb(0 0 0 / 0.18), 6px 10px 18px rgb(0 0 0 / 0.12);
-	--shadow-lift: 4px 6px 0 rgb(0 0 0 / 0.2), 12px 22px 32px rgb(0 0 0 / 0.18);
+	--shadow-paper: 1px 2px 0 rgb(59 49 40 / 0.15), 4px 8px 16px rgb(59 49 40 / 0.1);
+	--shadow-lift: 2px 4px 0 rgb(59 49 40 / 0.18), 10px 20px 30px rgb(59 49 40 / 0.16);
 	--wobble: 1; /* 傾きの強さ。整頓モードで 0 になる */
 
 	/* 3D の机（表紙のボード）。角度には --wobble を掛けて使う */
@@ -53,7 +90,7 @@
 	--desk-tilt: 2.5deg; /* ポインターに合わせた傾きの最大 */
 	--lift-hover: 20px; /* ホバーで手前に浮く量 */
 	--lift-drag: 60px; /* ドラッグ中に手前に浮く量 */
-	--shadow-desk: 6px 14px 18px rgb(0 0 0 / 0.35); /* 浮いた紙の影（影用の要素に使う） */
+	--shadow-desk: 6px 14px 18px rgb(59 49 40 / 0.32); /* 浮いた紙の影（影用の要素に使う） */
 
 	/* コード用の書体 */
 	--font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
@@ -117,27 +154,51 @@
 	}
 }
 
-/* 夜の色。値は 2 か所で同じにする（端末が夜で「昼」を選んでいないとき／「夜」を選んだとき） */
+/* 夜の色（夜のスケッチブック）。値は 2 か所で同じにする（端末が夜で「昼」を選んでいないとき／「夜」を選んだとき） */
 @media (prefers-color-scheme: dark) {
 	:root:not(.light) {
-		--color-bg: #1f1c19;
-		--color-surface: #2b2723;
-		--color-text: #f5efe3;
-		--color-muted: #c9bfb0;
-		--color-border: #f5efe3;
-		--color-grid: rgb(245 239 227 / 0.07);
-		--color-brand: #ff8fc0;
+		--color-bg: #1d1a17;
+		--color-paper: #26221e;
+		--color-surface: #2f2a25;
+		--color-text: #efe6d6;
+		--color-muted: #c9bba8;
+		--color-accent: #f0a58a;
+		--wash-lilac: rgb(201 182 228 / 0.1);
+		--wash-peach: rgb(242 168 138 / 0.08);
+		--wash-sage: rgb(169 191 154 / 0.07);
+		--hl-yellow: rgb(244 213 141 / 0.3);
+		--hl-blue: rgb(207 224 243 / 0.24);
+		--hl-pink: rgb(238 180 180 / 0.28);
+		--hl-sage: rgb(207 224 195 / 0.24);
+		--paper-grain: rgb(239 230 214 / 0.02);
+		--rule-line: rgb(160 178 230 / 0.2);
+		--rule-margin: rgb(214 150 165 / 0.4);
+		--ring-a: #5c574f;
+		--ring-b: #a8a298;
+		--ring-hole: rgb(0 0 0 / 0.7);
+		--color-danger: #f2b8b5;
 	}
 }
 
 :root.dark {
-	--color-bg: #1f1c19;
-	--color-surface: #2b2723;
-	--color-text: #f5efe3;
-	--color-muted: #c9bfb0;
-	--color-border: #f5efe3;
-	--color-grid: rgb(245 239 227 / 0.07);
-	--color-brand: #ff8fc0;
+	--color-bg: #1d1a17;
+	--color-paper: #26221e;
+	--color-surface: #2f2a25;
+	--color-text: #efe6d6;
+	--color-muted: #c9bba8;
+	--color-accent: #f0a58a;
+	--wash-lilac: rgb(201 182 228 / 0.1);
+	--wash-peach: rgb(242 168 138 / 0.08);
+	--wash-sage: rgb(169 191 154 / 0.07);
+	--hl-yellow: rgb(244 213 141 / 0.3);
+	--hl-blue: rgb(207 224 243 / 0.24);
+	--hl-pink: rgb(238 180 180 / 0.28);
+	--hl-sage: rgb(207 224 195 / 0.24);
+	--paper-grain: rgb(239 230 214 / 0.02);
+	--rule-line: rgb(160 178 230 / 0.2);
+	--rule-margin: rgb(214 150 165 / 0.4);
+	--ring-metal: linear-gradient(90deg, #5c574f, #a8a298 45%, #5c574f);
+	--color-danger: #f2b8b5;
 }
 
 /* 整頓モード：傾き・動きを止めて読みやすさ優先にする */
@@ -157,24 +218,49 @@
 	}
 }
 
-/* 方眼ノートの背景 */
-body {
+/*
+  画用紙のページ。
+  机の色（--color-bg）を html に敷き、その上に「画用紙・水彩のにじみ・紙の質感」を
+  body::before の固定レイヤーとして 1 枚だけ描く。スクロールしても動かないので、描き直しは起きない。
+  上端のリング綴じは Base.astro の .binding（繰り返し背景）。
+*/
+html {
 	background-color: var(--color-bg);
-	background-image:
-		linear-gradient(var(--color-grid) 1px, transparent 1px),
-		linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
-	background-size: 24px 24px;
+}
+
+body {
+	background: transparent;
 	overflow-x: hidden;
 }
 
-::selection {
-	background: var(--c-yellow);
-	color: var(--c-ink);
+body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	background-color: var(--color-paper);
+	background-image:
+		radial-gradient(ellipse 420px 300px at 12% 22%, var(--wash-lilac), transparent 70%),
+		radial-gradient(ellipse 480px 320px at 88% 30%, var(--wash-peach), transparent 70%),
+		radial-gradient(ellipse 600px 360px at 50% 78%, var(--wash-sage), transparent 70%),
+		repeating-radial-gradient(
+			circle at 30% 40%,
+			var(--paper-grain) 0,
+			var(--paper-grain) 1px,
+			transparent 1px,
+			transparent 4px
+		);
 }
 
-/* キーボード操作の位置をはっきり見せる */
+::selection {
+	background: var(--crayon-yellow);
+	color: var(--crayon-ink);
+}
+
+/* キーボード操作の位置をはっきり見せる（赤ペンの太い点線） */
 :focus-visible {
-	outline: 3px dashed var(--color-brand);
+	outline: 3px dashed var(--color-accent);
 	outline-offset: 4px;
 }
 
@@ -182,7 +268,17 @@ body {
    共通パーツ
    ------------------------------------------------------------------ */
 
-/* マスキングテープ（要素の ::before に貼る） */
+/* 手描きの枠：太さ 2px の線と、いびつな角。CSS だけなので重さは 0 */
+.hand-frame {
+	border: 2px solid var(--color-text);
+	border-radius: var(--hand-radius);
+}
+
+.hand-frame--alt {
+	border-radius: var(--hand-radius-alt);
+}
+
+/* マスキングテープ（要素の ::before に貼る）。淡い縞。飾りなので読み上げには出ない */
 .tape {
 	position: relative;
 }
@@ -190,26 +286,43 @@ body {
 .tape::before {
 	content: "";
 	position: absolute;
-	top: -12px;
+	top: -13px;
 	left: 50%;
-	width: 96px;
+	width: 110px;
 	height: 26px;
 	translate: -50% 0;
 	rotate: calc(var(--tape-rot, -4deg) * var(--wobble));
-	background: var(--tape-color, var(--c-yellow));
-	opacity: 0.85;
-	mask-image: linear-gradient(
-		90deg,
-		transparent 0 3px,
-		#000 3px calc(100% - 3px),
-		transparent calc(100% - 3px)
+	background: repeating-linear-gradient(
+		45deg,
+		color-mix(in srgb, var(--tape-color, var(--crayon-sage)) 88%, transparent) 0 6px,
+		color-mix(in srgb, var(--tape-color, var(--crayon-sage)) 62%, transparent) 6px 12px
 	);
-	box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
 	z-index: 2;
 	pointer-events: none;
 }
 
-/* 白い紙（本文を読むところ） */
+/*
+  写真コーナー（4 すみの三角）。写真を包む要素（position: relative）に付ける。
+  三角の色は --corner-color（初期値はインク）。
+*/
+.photo-corners {
+	position: relative;
+}
+
+.photo-corners::after {
+	content: "";
+	position: absolute;
+	inset: -6px;
+	pointer-events: none;
+	opacity: 0.85;
+	background:
+		linear-gradient(135deg, var(--corner-color, var(--color-text)) 50%, transparent 50%) left top / 34px 34px no-repeat,
+		linear-gradient(225deg, var(--corner-color, var(--color-text)) 50%, transparent 50%) right top / 34px 34px no-repeat,
+		linear-gradient(45deg, var(--corner-color, var(--color-text)) 50%, transparent 50%) left bottom / 34px 34px no-repeat,
+		linear-gradient(315deg, var(--corner-color, var(--color-text)) 50%, transparent 50%) right bottom / 34px 34px no-repeat;
+}
+
+/* 貼った紙（本文を読むところ）。画用紙より 1 段白い */
 .paper {
 	background: var(--color-surface);
 	color: var(--color-text);
@@ -217,39 +330,39 @@ body {
 	padding: clamp(1.25rem, 4vw, 3rem);
 }
 
-/* 罫線入りの紙 */
+/* 罫線ノートの紙：青い罫線と、左の赤い余白線 */
 .paper--ruled {
-	background-image: repeating-linear-gradient(
-		transparent 0 calc(1.9em - 1px),
-		light-dark(rgb(62 198 224 / 0.25), rgb(62 198 224 / 0.15)) calc(1.9em - 1px) 1.9em
-	);
 	background-color: var(--color-surface);
-	background-position: 0 0.4em;
+	background-image:
+		linear-gradient(90deg, transparent 30px, var(--rule-margin) 30px 32px, transparent 32px),
+		repeating-linear-gradient(transparent 0 calc(1.9em - 1px), var(--rule-line) calc(1.9em - 1px) 1.9em);
+	background-position: 0 0, 0 0.4em;
+	padding-inline-start: clamp(3rem, 7vw, 4.5rem);
 }
 
 /* 手書きメモ */
 .hand {
 	font-family: var(--font-hand);
+	font-weight: 600;
 }
 
-/* マーカーで引いたような強調 */
+/* 蛍光ペンで引いたような強調（色は --marker で変える。初期値は黄） */
 .marker {
-	background: linear-gradient(transparent 55%, var(--marker, var(--c-yellow)) 55% 90%, transparent 90%);
+	background: linear-gradient(transparent 55%, var(--marker, var(--hl-yellow)) 55% 90%, transparent 90%);
 	padding: 0 0.15em;
 	color: inherit;
 }
 
-/* 丸いステッカー */
+/* 丸いシール（絵文字などを手描きの丸の中に入れる） */
 .sticker {
 	display: inline-grid;
 	place-items: center;
 	width: 3.5rem;
 	height: 3.5rem;
 	border-radius: 50%;
-	background: var(--sticker-bg, var(--c-pink));
-	color: var(--c-ink);
-	border: 3px solid #fff;
-	box-shadow: 1px 2px 0 rgb(0 0 0 / 0.25);
+	background: var(--sticker-bg, var(--crayon-pink));
+	color: var(--crayon-ink);
+	border: 2px solid var(--color-text);
 	font-size: 1.6rem;
 	line-height: 1;
 	rotate: calc(12deg * var(--wobble));
@@ -257,46 +370,45 @@ body {
 }
 
 /*
-  押せるものはラベルシール風。
-  M3E のボタンのように、押している間は角が四角く・少し小さくなり、
-  離すとばねで元に戻る。
+  押せるものは手描きの枠のクレヨンボタン。
+  M3E のボタンのように、押している間は少し小さくなり、離すとばねで元に戻る。
+  動かすのは translate / scale / rotate だけ。
 */
 .btn-label {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5em;
 	min-height: 48px;
-	padding: 0.5rem 1.3rem;
+	padding: 0.5rem 1.4rem;
 	font-family: var(--font-body);
 	font-weight: 700;
 	font-size: var(--font-size-sm);
-	color: var(--c-ink);
-	background: var(--btn-bg, var(--c-yellow));
-	border: 2px solid var(--c-ink);
-	border-radius: 999px;
-	box-shadow: 3px 3px 0 var(--c-ink);
+	color: var(--crayon-ink);
+	background: var(--btn-bg, var(--crayon-yellow));
+	border: 2px solid var(--color-text);
+	border-radius: var(--hand-radius);
 	text-decoration: none;
 	cursor: pointer;
 	rotate: calc(var(--btn-rot, -1.5deg) * var(--wobble));
 	transition:
 		translate var(--spring-fast),
 		scale var(--spring-fast),
-		box-shadow var(--spring-fast),
-		border-radius var(--spring-fast),
 		rotate var(--spring);
 }
 
+.btn-label--alt {
+	border-radius: var(--hand-radius-alt);
+}
+
 .btn-label:hover {
-	translate: -2px -2px;
-	box-shadow: 5px 5px 0 var(--c-ink);
+	translate: 0 -2px;
+	scale: 1.03;
 	rotate: 0deg;
 }
 
 .btn-label:active {
-	translate: 2px 2px;
+	translate: 0 1px;
 	scale: 0.96;
-	border-radius: 10px;
-	box-shadow: 0 0 0 var(--c-ink);
 }
 
 /* 形が変わるステッカー（M3E のシェイプ）。ホバーで別の形にモーフする */
@@ -317,18 +429,18 @@ body {
 	scale: var(--morph-scale, 1.08);
 }
 
-/* ラベルテープ風の小見出し */
+/* 小見出しのタグ：手描きの枠に黄色のクレヨンを塗ったラベル */
 .label-tape {
 	display: inline-block;
-	padding: 0.3rem 0.9rem;
-	font-family: var(--font-body);
-	font-weight: 700;
-	font-size: var(--font-size-base);
-	letter-spacing: 0.08em;
-	color: light-dark(#fff, var(--c-ink));
-	background: light-dark(var(--c-ink), var(--c-yellow));
+	padding: 0.3rem 1rem;
+	font-family: var(--font-heading);
+	font-weight: var(--font-weight-heading);
+	font-size: var(--font-size-lg);
+	color: var(--crayon-ink);
+	background: var(--label-bg, var(--crayon-yellow));
+	border: 2px solid var(--color-text);
+	border-radius: var(--hand-radius-alt);
 	rotate: calc(-2deg * var(--wobble));
-	box-shadow: 2px 2px 0 var(--label-shadow, var(--c-pink));
 }
 
 /* 本文（Portable Text）の共通スタイル */
@@ -345,11 +457,12 @@ body {
 	padding-inline-start: 1.4em;
 }
 
+/* 見出しは蛍光ペンでなぞる */
 .prose :where(h2) {
 	display: inline-block;
 	margin: 2em 0 0.8em;
 	font-size: var(--font-size-xl);
-	background: linear-gradient(transparent 60%, var(--c-cyan) 60% 92%, transparent 92%);
+	background: linear-gradient(transparent 58%, var(--hl-yellow) 58% 92%, transparent 92%);
 }
 
 .prose :where(h3) {
@@ -357,25 +470,30 @@ body {
 	font-size: var(--font-size-lg);
 }
 
+/* 引用は黄色いふせん */
 .prose :where(blockquote) {
 	margin: 2em 0;
 	padding: 1rem 1.25rem;
 	font-family: var(--font-hand);
+	font-weight: 600;
 	font-size: var(--font-size-lg);
-	background: light-dark(#fff6b3, #4a4222);
+	color: var(--crayon-ink);
+	background: var(--crayon-yellow);
 	box-shadow: var(--shadow-paper);
 	rotate: calc(-1deg * var(--wobble));
 }
 
 .prose :where(a) {
-	color: var(--color-brand);
+	color: var(--color-accent);
 	text-underline-offset: 3px;
 	text-decoration-thickness: 2px;
 }
 
+/* 本文の中の写真：白いふちの写真 */
 .prose :where(img) {
 	margin: 2em 0;
-	border: 8px solid #fff;
+	padding: 10px;
+	background: var(--color-surface);
 	box-shadow: var(--shadow-paper);
 }
 

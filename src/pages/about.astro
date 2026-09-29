@@ -82,7 +82,7 @@ const seo = getSeoMeta(page, {
 	}
 
 	.about-title .marker {
-		--marker: var(--c-cyan);
+		--marker: var(--hl-blue);
 	}
 
 	.about-content {
@@ -120,6 +120,12 @@ const seo = getSeoMeta(page, {
 	.memo p {
 		font-family: var(--font-hand);
 		font-size: var(--font-size-lg);
+	}
+
+	.memo a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
 	}
 
 	.memo--yellow {
