@@ -137,7 +137,8 @@ const manifestPath = join(opts.dir, "favorites.json");
 if (!existsSync(manifestPath)) fail(`${manifestPath} がありません（.private-media/ に置いてください）`);
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 const projects = manifest.projects ?? [];
-const replaceSamples = manifest.replace_samples ?? [];
+// replace_samples（見本）と hidden（持ち主が「未公開」と決めたもの）は、消さずに下書きへ戻す
+const replaceSamples = [...(manifest.replace_samples ?? []), ...(manifest.hidden ?? [])];
 
 console.log(`読み込み先: ${opts.url}（${opts.token ? "トークン" : "開発用の認証"}）`);
 
@@ -246,7 +247,7 @@ for (const p of [...projects].reverse()) {
 	rows.set(p.slug, { slug: p.slug, title: p.title, result, back: p.back_image ? "あり" : "-", tags: (p.tags ?? []).join(",") });
 }
 
-// 4. 見本は消さずに下書きへ戻す（表に出さない）
+// 4. 見本と未公開のものは、消さずに下書きへ戻す（表に出さない）
 const sampleRows = [];
 for (const slug of replaceSamples) {
 	const found = existing.get(slug);
