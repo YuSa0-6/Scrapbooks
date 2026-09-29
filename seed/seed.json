@@ -1,0 +1,503 @@
+{
+	"$schema": "https://emdashcms.com/seed.schema.json",
+	"version": "1",
+	"meta": {
+		"name": "Scrapbook Portfolio",
+		"description": "スクラップブック風のポートフォリオ",
+		"author": "YuSa0-6"
+	},
+	"settings": {
+		"title": "Scrapbook",
+		"tagline": "つくったものの切り抜き帳"
+	},
+	"collections": [
+		{
+			"slug": "projects",
+			"label": "Projects",
+			"labelSingular": "Project",
+			"supports": [
+				"drafts",
+				"revisions",
+				"preview",
+				"search",
+				"seo"
+			],
+			"urlPattern": "/work/{slug}",
+			"fields": [
+				{
+					"slug": "title",
+					"label": "Title",
+					"type": "string",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "featured_image",
+					"label": "Featured Image",
+					"type": "image",
+					"required": true
+				},
+				{
+					"slug": "client",
+					"label": "Client",
+					"type": "string"
+				},
+				{
+					"slug": "year",
+					"label": "Year",
+					"type": "string"
+				},
+				{
+					"slug": "summary",
+					"label": "Summary",
+					"type": "text",
+					"searchable": true
+				},
+				{
+					"slug": "note",
+					"label": "手書きメモ（写真の下にひとこと）",
+					"type": "string"
+				},
+				{
+					"slug": "sticker",
+					"label": "ステッカー（絵文字 1 つ）",
+					"type": "string"
+				},
+				{
+					"slug": "content",
+					"label": "Content",
+					"type": "portableText",
+					"searchable": true
+				},
+				{
+					"slug": "gallery",
+					"label": "Gallery",
+					"type": "repeater",
+					"validation": {
+						"maxItems": 24,
+						"subFields": [
+							{
+								"slug": "image",
+								"label": "Image",
+								"type": "image",
+								"required": true
+							},
+							{
+								"slug": "caption",
+								"label": "Caption",
+								"type": "text"
+							}
+						]
+					}
+				},
+				{
+					"slug": "url",
+					"label": "Project URL",
+					"type": "url"
+				}
+			]
+		},
+		{
+			"slug": "pages",
+			"label": "Pages",
+			"labelSingular": "Page",
+			"supports": [
+				"drafts",
+				"revisions",
+				"preview",
+				"search",
+				"seo"
+			],
+			"urlPattern": "/{slug}",
+			"fields": [
+				{
+					"slug": "title",
+					"label": "Title",
+					"type": "string",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "content",
+					"label": "Content",
+					"type": "portableText",
+					"searchable": true
+				}
+			]
+		}
+	],
+	"taxonomies": [
+		{
+			"name": "tag",
+			"label": "Tags",
+			"labelSingular": "Tag",
+			"hierarchical": false,
+			"collections": [
+				"projects"
+			],
+			"terms": [
+				{
+					"slug": "web",
+					"label": "Web"
+				},
+				{
+					"slug": "app",
+					"label": "アプリ"
+				},
+				{
+					"slug": "design",
+					"label": "デザイン"
+				},
+				{
+					"slug": "tool",
+					"label": "道具"
+				},
+				{
+					"slug": "experiment",
+					"label": "実験"
+				}
+			]
+		}
+	],
+	"menus": [
+		{
+			"name": "primary",
+			"label": "Primary Navigation",
+			"items": [
+				{
+					"type": "custom",
+					"label": "作品",
+					"url": "/work"
+				},
+				{
+					"type": "custom",
+					"label": "わたしについて",
+					"url": "/about"
+				},
+				{
+					"type": "custom",
+					"label": "れんらく",
+					"url": "/contact"
+				}
+			]
+		}
+	],
+	"content": {
+		"pages": [
+			{
+				"id": "about",
+				"slug": "about",
+				"status": "published",
+				"data": {
+					"title": "わたしについて",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "はじめまして。ここは、わたしがつくったものを貼りつけていくスクラップブックです。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "どんな人？",
+									"_key": "k3"
+								}
+							],
+							"_key": "k2"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ここに自己紹介を書きます。管理画面から自由に書き換えられます。",
+									"_key": "k5"
+								}
+							],
+							"_key": "k4"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "つくっているもの",
+									"_key": "k7"
+								}
+							],
+							"_key": "k6"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Web サイト、アプリ、ちょっとした道具など。",
+									"_key": "k9"
+								}
+							],
+							"_key": "k8"
+						}
+					]
+				}
+			}
+		],
+		"projects": [
+			{
+				"id": "meridian-brand",
+				"slug": "meridian-brand",
+				"status": "published",
+				"data": {
+					"title": "ここに作品名",
+					"client": "サンプル（差し替えてね）",
+					"year": "2026",
+					"summary": "作品のひとこと説明をここに書きます。何をつくったか、1〜2 文で。",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&h=900&fit=crop",
+							"alt": "ここに作品名 のカバー画像",
+							"filename": "photo-1558618666-fcd25c85cd64.jpg"
+						}
+					},
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "この作品ページは見本です。管理画面（/_emdash/admin）から、自分の作品に書き換えてください。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "きっかけ",
+									"_key": "k3"
+								}
+							],
+							"_key": "k2"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "なぜつくろうと思ったのかを書きます。",
+									"_key": "k5"
+								}
+							],
+							"_key": "k4"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "工夫したところ",
+									"_key": "k7"
+								}
+							],
+							"_key": "k6"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "使った技術や、こだわった点を書きます。",
+									"_key": "k9"
+								}
+							],
+							"_key": "k8"
+						},
+						{
+							"_type": "block",
+							"style": "blockquote",
+							"children": [
+								{
+									"_type": "span",
+									"text": "手書き風の引用は、ふせんのように表示されます。",
+									"_key": "k11"
+								}
+							],
+							"_key": "k10"
+						}
+					],
+					"gallery": [
+						{
+							"image": {
+								"$media": {
+									"url": "https://images.unsplash.com/photo-1523726491678-bf852e717f6a?w=1200&h=900&fit=crop",
+									"alt": "Brand identity sketches and colour studies arranged on a desk",
+									"filename": "meridian-process.jpg"
+								}
+							},
+							"caption": "ラフスケッチ"
+						},
+						{
+							"image": {
+								"$media": {
+									"url": "https://images.unsplash.com/photo-1558655146-d09347e92766?w=1200&h=900&fit=crop",
+									"alt": "Meridian website layouts displayed on a designer's monitor",
+									"filename": "meridian-digital.jpg"
+								}
+							},
+							"caption": "色の検討"
+						}
+					],
+					"note": "いちばんのお気に入り！",
+					"sticker": "⭐"
+				},
+				"taxonomies": {
+					"tag": [
+						"design",
+						"web"
+					]
+				}
+			},
+			{
+				"id": "volta-web",
+				"slug": "volta-web",
+				"status": "published",
+				"data": {
+					"title": "Web サイトの見本",
+					"client": "個人制作",
+					"year": "2026",
+					"summary": "Web サイトの作品の見本です。画像・説明・タグを差し替えて使います。",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=900&fit=crop",
+							"alt": "Web サイトの見本 のカバー画像",
+							"filename": "photo-1497366216548-37526070297c.jpg"
+						}
+					},
+					"url": "https://volta.example.com",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ここに作品の説明を書きます。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						}
+					],
+					"note": "3 日で作った",
+					"sticker": "🚀"
+				},
+				"taxonomies": {
+					"tag": [
+						"web",
+						"experiment"
+					]
+				}
+			},
+			{
+				"id": "archive-print",
+				"slug": "archive-print",
+				"status": "published",
+				"data": {
+					"title": "アプリの見本",
+					"client": "個人制作",
+					"year": "2025",
+					"summary": "アプリの作品の見本です。スクリーンショットをギャラリーに並べられます。",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=900&fit=crop",
+							"alt": "アプリの見本 のカバー画像",
+							"filename": "photo-1507003211169-0a1dd7228f2d.jpg"
+						}
+					},
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ここに作品の説明を書きます。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						}
+					],
+					"note": "毎日つかってる",
+					"sticker": "📱"
+				},
+				"taxonomies": {
+					"tag": [
+						"app",
+						"tool"
+					]
+				}
+			},
+			{
+				"id": "coastal-photo",
+				"slug": "coastal-photo",
+				"status": "published",
+				"data": {
+					"title": "写真・デザインの見本",
+					"client": "趣味",
+					"year": "2025",
+					"summary": "写真やデザインの作品の見本です。",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1200&h=900&fit=crop",
+							"alt": "写真・デザインの見本 のカバー画像",
+							"filename": "photo-1505142468610-359e7d316be0.jpg"
+						}
+					},
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ここに作品の説明を書きます。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						}
+					],
+					"note": "海、また行きたい",
+					"sticker": "🌊"
+				},
+				"taxonomies": {
+					"tag": [
+						"design"
+					]
+				}
+			}
+		]
+	}
+}

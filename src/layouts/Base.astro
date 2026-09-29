@@ -1,0 +1,610 @@
+---
+import { getMenuWithCacheHint, getSiteSettingsWithCacheHint } from "emdash";
+import { EmDashBodyEnd, EmDashBodyStart, EmDashHead } from "emdash/ui";
+import { createPublicPageContext } from "emdash/page";
+import { Font } from "astro:assets";
+import "../styles/tokens.css";
+import "../styles/theme.css";
+
+interface Props {
+	title?: string;
+	pageTitle?: string | null;
+	description?: string | null;
+	image?: string | null;
+	canonical?: string | null;
+	robots?: string | null;
+	type?: "website" | "article";
+	content?: { collection: string; id: string; slug?: string | null };
+}
+
+const {
+	title,
+	pageTitle,
+	description,
+	image,
+	canonical,
+	robots,
+	type = "website",
+	content,
+} = Astro.props;
+const [settingsResult, menuResult] = await Promise.all([
+	getSiteSettingsWithCacheHint(),
+	getMenuWithCacheHint("primary"),
+]);
+const settings = settingsResult.data;
+const menu = menuResult.data;
+if (Astro.cache?.enabled) {
+	Astro.cache.set(settingsResult.cacheHint);
+	Astro.cache.set(menuResult.cacheHint);
+}
+
+const siteTitle = settings?.title || "Scrapbook";
+const separator = settings?.seo?.titleSeparator || " — ";
+const fullTitle = !title
+	? siteTitle
+	: title === siteTitle ||
+		  title.endsWith(` — ${siteTitle}`) ||
+		  title.endsWith(` | ${siteTitle}`)
+		? title
+		: `${title}${separator}${siteTitle}`;
+const siteDescription = settings?.tagline || "つくったものの切り抜き帳";
+const siteLogo = settings?.logo?.url ? settings.logo : null;
+const canonicalUrl =
+	canonical ?? new URL(Astro.url.pathname, Astro.url.origin).href;
+
+const pageCtx = createPublicPageContext({
+	Astro,
+	kind: content ? "content" : "custom",
+	pageType: type,
+	title: fullTitle,
+	pageTitle: pageTitle ?? title ?? siteTitle,
+	description: description || siteDescription,
+	canonical: canonicalUrl,
+	image,
+	content,
+	seo: { ogImage: image, robots },
+	siteName: siteTitle,
+});
+
+const isLoggedIn = Boolean(Astro.locals.user);
+
+// いま開いているページのメニューに印をつける
+const currentPath = Astro.url.pathname;
+function isCurrent(url: string): boolean {
+	if (url === "/") return currentPath === "/";
+	return currentPath === url || currentPath.startsWith(`${url}/`);
+}
+
+// メニューごとにテープの色を変える
+const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--c-green)"];
+---
+
+<!doctype html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{fullTitle}</title>
+		<EmDashHead page={pageCtx} />
+		<Font cssVariable="--font-heading" preload />
+		<Font cssVariable="--font-body" />
+		<Font cssVariable="--font-hand" />
+		<link
+			rel="alternate"
+			type="application/rss+xml"
+			title={`${siteTitle} RSS Feed`}
+			href="/rss.xml"
+		/>
+		<script is:inline>
+			// 保存済みのテーマと整頓モードを、描画前に反映してちらつきを防ぐ
+			(function () {
+				var c = document.cookie;
+				var m = c.match(/(?:^|; )theme=([^;]+)/);
+				var theme = m ? m[1] : null;
+				if (theme === "dark" || theme === "light") {
+					document.documentElement.classList.add(theme);
+				}
+				if (/(?:^|; )tidy=1/.test(c)) {
+					document.documentElement.classList.add("tidy");
+				}
+			})();
+		</script>
+	</head>
+	<body>
+		<EmDashBodyStart page={pageCtx} />
+		<a href="#main" class="skip-link">本文へ移動</a>
+		<header class="site-header">
+			<nav class="nav" aria-label="メインメニュー">
+				<a href="/" class="site-title" aria-current={currentPath === "/" ? "page" : undefined}>
+					{
+						siteLogo ? (
+							<img
+								src={siteLogo.url}
+								alt={siteLogo.alt || siteTitle}
+								class="site-logo-img"
+							/>
+						) : (
+							<>
+								<span class="site-title-mark" aria-hidden="true">✂</span>
+								{siteTitle}
+							</>
+						)
+					}
+				</a>
+				<ul class="nav-links">
+					{
+						menu?.items.map((item, i) => (
+							<li>
+								<a
+									href={item.url}
+									target={item.target}
+									rel={
+										item.target === "_blank" ? "noopener noreferrer" : undefined
+									}
+									aria-current={isCurrent(item.url) ? "page" : undefined}
+									style={`--tab: ${tapeColors[i % tapeColors.length]}; --i: ${i}`}
+								>
+									{item.label}
+								</a>
+							</li>
+						))
+					}
+					{
+						isLoggedIn && (
+							<li>
+								<a href="/_emdash/admin" class="nav-admin">
+									管理画面
+								</a>
+							</li>
+						)
+					}
+				</ul>
+				<button
+					type="button"
+					class="tidy-toggle"
+					aria-pressed="false"
+					title="傾きや動きを止めて、読みやすく並べ直します"
+				>
+					<span class="tidy-on" aria-hidden="true">🌀 はちゃめちゃ</span>
+					<span class="tidy-off" aria-hidden="true">📐 整頓中</span>
+					<span class="visually-hidden">整頓モード</span>
+				</button>
+			</nav>
+		</header>
+
+		<main id="main">
+			<slot />
+		</main>
+
+		<footer class="site-footer">
+			<div class="footer-content paper tape" style="--tape-color: var(--c-cyan)">
+				<div class="footer-brand">
+					<span class="footer-logo">
+						{
+							siteLogo ? (
+								<img
+									src={siteLogo.url}
+									alt={siteLogo.alt || siteTitle}
+									class="footer-logo-img"
+								/>
+							) : (
+								siteTitle
+							)
+						}
+					</span>
+					<p class="footer-tagline hand">{siteDescription}</p>
+				</div>
+				<div class="footer-right">
+					<div class="theme-switcher" role="group" aria-label="配色">
+						<button
+							type="button"
+							class="theme-btn"
+							data-theme="light"
+							aria-pressed="false">☀ 昼</button
+						>
+						<button
+							type="button"
+							class="theme-btn"
+							data-theme="dark"
+							aria-pressed="false">☾ 夜</button
+						>
+						<button
+							type="button"
+							class="theme-btn"
+							data-theme="system"
+							aria-pressed="false">端末に合わせる</button
+						>
+					</div>
+					<p class="footer-powered">
+						Powered by <a href="https://emdashcms.com">EmDash</a>
+					</p>
+				</div>
+			</div>
+		</footer>
+		<EmDashBodyEnd page={pageCtx} />
+
+		<script>
+			const root = document.documentElement;
+			const secure = location.protocol === "https:" ? "; Secure" : "";
+
+			function readCookie(name: string): string | null {
+				const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]+)`));
+				return match ? match[1] : null;
+			}
+
+			function writeCookie(name: string, value: string | null) {
+				document.cookie =
+					value === null
+						? `${name}=; path=/; max-age=0; SameSite=Lax${secure}`
+						: `${name}=${value}; path=/; max-age=31536000; SameSite=Lax${secure}`;
+			}
+
+			// 配色の切り替え
+			const themeBtns = document.querySelectorAll<HTMLButtonElement>(".theme-btn");
+
+			function setTheme(theme: string) {
+				if (theme !== "light" && theme !== "dark") theme = "system";
+				root.classList.remove("light", "dark");
+				if (theme === "system") {
+					writeCookie("theme", null);
+				} else {
+					writeCookie("theme", theme);
+					root.classList.add(theme);
+				}
+				themeBtns.forEach((btn) => {
+					const active = btn.dataset.theme === theme;
+					btn.classList.toggle("active", active);
+					btn.setAttribute("aria-pressed", String(active));
+				});
+			}
+
+			setTheme(readCookie("theme") ?? "system");
+			themeBtns.forEach((btn) => {
+				btn.addEventListener("click", () => setTheme(btn.dataset.theme || "system"));
+			});
+
+			// 整頓モードの切り替え
+			const tidyBtn = document.querySelector<HTMLButtonElement>(".tidy-toggle");
+
+			function setTidy(on: boolean) {
+				root.classList.toggle("tidy", on);
+				writeCookie("tidy", on ? "1" : null);
+				tidyBtn?.setAttribute("aria-pressed", String(on));
+			}
+
+			setTidy(readCookie("tidy") === "1");
+			tidyBtn?.addEventListener("click", () => setTidy(!root.classList.contains("tidy")));
+		</script>
+
+		<style is:global>
+			/*
+			 * Establish layer order: "base" has lower priority than unlayered
+			 * styles, so theme.css overrides always win regardless of source
+			 * order in the bundled CSS.
+			 */
+			@layer base;
+
+			@layer base {
+				*,
+				*::before,
+				*::after {
+					box-sizing: border-box;
+					margin: 0;
+					padding: 0;
+				}
+
+				@supports (color: light-dark(#000, #fff)) {
+					:root.light {
+						color-scheme: light;
+					}
+
+					:root.dark {
+						color-scheme: dark;
+					}
+				}
+
+				html {
+					scroll-behavior: smooth;
+				}
+
+				body {
+					font-family: var(--font-body);
+					font-size: var(--font-size-base);
+					line-height: var(--leading-normal);
+					color: var(--color-text);
+					background: var(--color-bg);
+					-webkit-font-smoothing: antialiased;
+					min-height: 100vh;
+				}
+
+				a {
+					color: currentColor;
+				}
+
+				img {
+					max-width: 100%;
+					height: auto;
+					display: block;
+				}
+
+				h1,
+				h2,
+				h3,
+				h4 {
+					font-family: var(--font-heading);
+					font-weight: var(--font-weight-heading);
+					line-height: var(--leading-snug);
+				}
+
+				h1 {
+					font-size: var(--font-size-4xl);
+				}
+
+				h2 {
+					font-size: var(--font-size-2xl);
+				}
+
+				h3 {
+					font-size: var(--font-size-xl);
+				}
+
+				.visually-hidden {
+					position: absolute;
+					width: 1px;
+					height: 1px;
+					overflow: hidden;
+					clip-path: inset(50%);
+					white-space: nowrap;
+				}
+			}
+		</style>
+
+		<style>
+			.skip-link {
+				position: absolute;
+				top: -100px;
+				left: var(--spacing-md);
+				z-index: 100;
+				padding: var(--spacing-sm) var(--spacing-md);
+				background: var(--c-yellow);
+				color: var(--c-ink);
+				font-weight: 700;
+			}
+
+			.skip-link:focus {
+				top: var(--spacing-md);
+			}
+
+			/* ヘッダー：画面上部に固定。ふせんのインデックスのようなメニュー */
+			.site-header {
+				position: sticky;
+				top: 0;
+				z-index: 50;
+				background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+				backdrop-filter: blur(6px);
+				border-bottom: 3px dashed color-mix(in srgb, var(--color-text) 25%, transparent);
+			}
+
+			.nav {
+				max-width: var(--wide-width);
+				margin: 0 auto;
+				padding: var(--spacing-sm) var(--spacing-lg);
+				display: flex;
+				align-items: center;
+				gap: var(--spacing-lg);
+			}
+
+			.site-title {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4em;
+				min-height: 44px;
+				font-family: var(--font-heading);
+				font-size: var(--font-size-lg);
+				text-decoration: none;
+				white-space: nowrap;
+			}
+
+			.site-title-mark {
+				display: inline-block;
+				color: var(--color-brand);
+				transition: rotate var(--transition-slow);
+			}
+
+			.site-title:hover .site-title-mark {
+				rotate: calc(-30deg * var(--wobble));
+			}
+
+			.site-logo-img {
+				height: 40px;
+				width: auto;
+			}
+
+			.nav-links {
+				display: flex;
+				flex-wrap: wrap;
+				gap: var(--spacing-sm);
+				margin-left: auto;
+				list-style: none;
+			}
+
+			.nav-links a {
+				display: inline-flex;
+				align-items: center;
+				min-height: 44px;
+				padding: 0 var(--spacing-md);
+				font-family: var(--font-body);
+				font-weight: 700;
+				font-size: var(--font-size-sm);
+				color: var(--c-ink);
+				text-decoration: none;
+				background: var(--tab);
+				border: 2px solid var(--c-ink);
+				rotate: calc((var(--i) * 3deg - 2deg) * var(--wobble));
+				transition:
+					rotate var(--transition-fast),
+					translate var(--transition-fast),
+					box-shadow var(--transition-fast);
+			}
+
+			.nav-links a:hover {
+				rotate: 0deg;
+				translate: 0 -2px;
+				box-shadow: 3px 3px 0 var(--c-ink);
+			}
+
+			/* 今いるページは黒いラベルにして、ひと目で分かるようにする */
+			.nav-links a[aria-current="page"] {
+				color: #fff;
+				background: var(--c-ink);
+				box-shadow: 3px 3px 0 var(--tab);
+			}
+
+			.nav-links a:empty {
+				display: none;
+			}
+
+			.nav-admin {
+				--tab: #fff;
+			}
+
+			.tidy-toggle {
+				min-height: 44px;
+				padding: 0 var(--spacing-md);
+				font-family: var(--font-hand);
+				font-size: var(--font-size-sm);
+				color: var(--color-text);
+				background: transparent;
+				border: 2px dashed currentColor;
+				border-radius: 999px;
+				cursor: pointer;
+				white-space: nowrap;
+			}
+
+			.tidy-toggle:hover {
+				background: var(--color-surface);
+			}
+
+			.tidy-off,
+			:global(.tidy) .tidy-on {
+				display: none;
+			}
+
+			:global(.tidy) .tidy-off {
+				display: inline;
+			}
+
+			main {
+				min-height: calc(100vh - 200px);
+			}
+
+			.site-footer {
+				max-width: var(--wide-width);
+				margin: var(--spacing-3xl) auto 0;
+				padding: 0 var(--spacing-lg) var(--spacing-2xl);
+			}
+
+			.footer-content {
+				display: flex;
+				justify-content: space-between;
+				align-items: flex-start;
+				gap: var(--spacing-xl);
+				rotate: calc(0.6deg * var(--wobble));
+			}
+
+			.footer-logo {
+				font-family: var(--font-heading);
+				font-size: var(--font-size-lg);
+			}
+
+			.footer-logo-img {
+				height: 24px;
+				width: auto;
+			}
+
+			.footer-tagline {
+				font-size: var(--font-size-lg);
+				color: var(--color-muted);
+				margin-top: var(--spacing-xs);
+			}
+
+			.footer-right {
+				display: flex;
+				flex-direction: column;
+				align-items: flex-end;
+				gap: var(--spacing-md);
+			}
+
+			.theme-switcher {
+				display: flex;
+				flex-wrap: wrap;
+				gap: var(--spacing-xs);
+			}
+
+			.theme-btn {
+				min-height: 44px;
+				padding: 0 var(--spacing-md);
+				background: transparent;
+				border: 2px solid var(--color-border);
+				color: var(--color-text);
+				font-family: var(--font-body);
+				font-size: var(--font-size-sm);
+				cursor: pointer;
+			}
+
+			.theme-btn:hover {
+				background: var(--color-bg);
+			}
+
+			.theme-btn.active {
+				color: var(--c-ink);
+				background: var(--c-yellow);
+				border-color: var(--c-ink);
+				font-weight: 700;
+			}
+
+			.footer-powered {
+				font-size: var(--font-size-sm);
+				color: var(--color-muted);
+			}
+
+			.footer-powered a {
+				color: var(--color-text);
+			}
+
+			@media (max-width: 720px) {
+				.nav {
+					flex-wrap: wrap;
+					gap: var(--spacing-sm) var(--spacing-md);
+					padding: var(--spacing-sm) var(--spacing-md);
+				}
+
+				.tidy-toggle {
+					margin-left: auto;
+				}
+
+				/* スマホではメニューを 2 段目に横並び。スクロールで追えるようにする */
+				.nav-links {
+					order: 3;
+					width: 100%;
+					margin-left: 0;
+					flex-wrap: nowrap;
+					overflow-x: auto;
+					padding: var(--spacing-xs) 2px var(--spacing-sm);
+				}
+
+				.nav-links a {
+					white-space: nowrap;
+				}
+
+				.footer-content {
+					flex-direction: column;
+				}
+
+				.footer-right {
+					align-items: flex-start;
+				}
+			}
+		</style>
+	</body>
+</html>

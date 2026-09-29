@@ -141,3 +141,14 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# ---- EmDash / Astro / Wrangler ----
+dist/
+.astro/
+.emdash/migrations.json
+data.db
+data.db-journal
+uploads/
+.wrangler/
+.dev.vars
+.dev.vars.*

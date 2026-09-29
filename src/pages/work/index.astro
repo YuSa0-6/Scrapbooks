@@ -1,0 +1,226 @@
+---
+export const prerender = false;
+
+import {
+	getEmDashCollection,
+	getTaxonomyTermsWithCacheHint,
+	getTermsForEntries,
+} from "emdash";
+import Base from "../../layouts/Base.astro";
+import ProjectCard from "../../components/ProjectCard.astro";
+import RansomTitle from "../../components/RansomTitle.astro";
+
+// Get filter from query param. When set, push the filter down to the
+// database via `where` instead of loading every project and filtering
+// in JS — that pattern scales O(projects × terms-per-project) and
+// blows up the moment you have more than a couple of dozen entries.
+const activeTag = Astro.url.searchParams.get("tag");
+const cursor = Astro.url.searchParams.get("cursor") ?? undefined;
+
+const [projectsResult, tagsResult] = await Promise.all([
+	getEmDashCollection("projects", {
+		orderBy: { published_at: "desc" },
+		limit: 12,
+		cursor,
+		...(activeTag ? { where: { tag: activeTag } } : {}),
+	}),
+	getTaxonomyTermsWithCacheHint("tag", { includeCounts: false }),
+]);
+if (projectsResult.error) {
+	return new Response("Could not load the portfolio", { status: 500 });
+}
+
+const { entries: sortedProjects, nextCursor } = projectsResult;
+const tags = tagsResult.data;
+if (Astro.cache?.enabled) {
+	Astro.cache.set(projectsResult.cacheHint);
+	Astro.cache.set(tagsResult.cacheHint);
+}
+
+// Single batched JOIN for the tag pills shown on each card, instead of
+// one getEntryTerms() round-trip per card.
+const tagsByEntry = await getTermsForEntries(
+	"projects",
+	sortedProjects.map((p) => p.data.id),
+	"tag",
+);
+const projectsWithTags = sortedProjects.map((project) => ({
+	project,
+	projectTags: tagsByEntry.get(project.data.id) ?? [],
+}));
+
+function workUrl(next: string): string {
+	const params = new URLSearchParams({ cursor: next });
+	if (activeTag) params.set("tag", activeTag);
+	return `/work?${params.toString()}`;
+}
+---
+
+<Base
+	title={activeTag
+		? `${tags.find((t) => t.slug === activeTag)?.label || activeTag} — 作品`
+		: "作品"}
+>
+	<section class="work-header">
+		<RansomTitle text="WORKS" size="lg" />
+		<p class="work-intro hand">つくったもの、ぜんぶここに貼ってあります。</p>
+
+		{
+			tags.length > 0 && (
+				<nav class="tag-filters" aria-label="タグで絞り込む">
+					<a
+						href="/work"
+						class:list={["tag-filter", { active: !activeTag }]}
+						aria-current={!activeTag ? "page" : undefined}
+					>
+						ぜんぶ
+					</a>
+					{tags.map((tag, i) => (
+						<a
+							href={`/work?tag=${tag.slug}`}
+							class:list={["tag-filter", { active: activeTag === tag.slug }]}
+							aria-current={activeTag === tag.slug ? "page" : undefined}
+							style={`--r: ${(i % 3) * 2 - 2}deg`}
+						>
+							#{tag.label}
+						</a>
+					))}
+				</nav>
+			)
+		}
+	</section>
+
+	{
+		projectsWithTags.length > 0 ? (
+			<section class="projects" aria-label="作品一覧">
+				<div class="projects-grid">
+					{projectsWithTags.map(({ project, projectTags }, i) => (
+						<ProjectCard
+							title={project.data.title}
+							summary={project.data.summary}
+							featuredImage={project.data.featured_image}
+							href={`/work/${project.id}`}
+							client={project.data.client}
+							year={project.data.year}
+							note={project.data.note}
+							sticker={project.data.sticker}
+							tags={projectTags.map((t) => t.label)}
+							edit={project.edit}
+							index={i}
+						/>
+					))}
+				</div>
+			</section>
+		) : (
+			<section class="empty-state paper tape">
+				{activeTag ? (
+					<>
+						<p>このタグの作品はまだありません。</p>
+						<a href="/work" class="btn-label">
+							ぜんぶ見る
+						</a>
+					</>
+				) : (
+					<>
+						<p>まだ作品がありません。管理画面から追加しましょう。</p>
+						<a href="/_emdash/admin/content/projects/new" class="btn-label">
+							作品を追加する
+						</a>
+					</>
+				)}
+			</section>
+		)
+	}
+
+	{
+		nextCursor && (
+			<nav class="pagination" aria-label="ページ送り">
+				<a href={workUrl(nextCursor)} rel="next" class="btn-label">
+					次のページをめくる →
+				</a>
+			</nav>
+		)
+	}
+</Base>
+
+<style>
+	.work-header {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-2xl);
+		text-align: center;
+	}
+
+	.work-intro {
+		margin-top: var(--spacing-lg);
+		font-size: var(--font-size-xl);
+		color: var(--color-muted);
+	}
+
+	.tag-filters {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--spacing-sm) var(--spacing-md);
+		margin-top: var(--spacing-xl);
+	}
+
+	/* タグはシール。選ばれているものは黒く塗る */
+	.tag-filter {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0 var(--spacing-md);
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+		color: var(--c-ink);
+		text-decoration: none;
+		background: #fffdf7;
+		border: 2px solid var(--c-ink);
+		border-radius: 999px;
+		rotate: calc(var(--r, 0deg) * var(--wobble));
+		transition:
+			rotate var(--transition-fast),
+			background var(--transition-fast);
+	}
+
+	.tag-filter:hover {
+		rotate: 0deg;
+		background: var(--c-yellow);
+	}
+
+	.tag-filter.active {
+		color: #fff;
+		background: var(--c-ink);
+		box-shadow: 3px 3px 0 var(--c-pink);
+	}
+
+	.projects {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	.projects-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: var(--spacing-3xl) var(--spacing-2xl);
+	}
+
+	.empty-state {
+		max-width: 480px;
+		margin: 0 auto var(--spacing-4xl);
+		text-align: center;
+	}
+
+	.empty-state p {
+		margin-bottom: var(--spacing-lg);
+	}
+
+	.pagination {
+		max-width: var(--wide-width);
+		margin: var(--spacing-xl) auto;
+		padding: 0 var(--spacing-lg);
+		text-align: center;
+	}
+</style>

@@ -1,0 +1,71 @@
+---
+import Base from "../layouts/Base.astro";
+
+// 公開する前に、自分の連絡先に書き換える
+const contactEmail = "hello@example.com";
+---
+
+<Base title="れんらく" description="お仕事や感想のご連絡はこちらから。">
+	<div class="contact-page">
+		<section class="letter paper paper--ruled tape" aria-labelledby="contact-title">
+			<span class="stamp" aria-hidden="true">📮</span>
+			<p class="letter-to hand">〜 読んでくれたあなたへ 〜</p>
+			<h1 id="contact-title" class="contact-title">お便り、まってます</h1>
+			<p class="contact-intro">
+				お仕事の相談、作品の感想、なんでも気軽にどうぞ。<br />
+				メールアプリが開くので、そのまま送ってください。
+			</p>
+			<a class="btn-label contact-link" href={`mailto:${contactEmail}`}>
+				✉ {contactEmail}
+			</a>
+		</section>
+	</div>
+</Base>
+
+<style>
+	.contact-page {
+		max-width: 760px;
+		margin: 0 auto;
+		padding: var(--spacing-4xl) var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	.letter {
+		position: relative;
+		rotate: calc(-1deg * var(--wobble));
+	}
+
+	.stamp {
+		position: absolute;
+		top: var(--spacing-md);
+		right: var(--spacing-md);
+		display: grid;
+		place-items: center;
+		width: 4.5rem;
+		height: 5.5rem;
+		font-size: 2.2rem;
+		background: var(--c-orange);
+		outline: 4px dotted #fff;
+		outline-offset: -8px;
+		rotate: calc(8deg * var(--wobble));
+	}
+
+	.letter-to {
+		font-size: var(--font-size-lg);
+		color: var(--color-brand);
+	}
+
+	.contact-title {
+		margin: var(--spacing-md) 0 var(--spacing-lg);
+		font-size: clamp(2rem, 6vw, 3.25rem);
+		padding-right: 5rem;
+	}
+
+	.contact-intro {
+		margin-bottom: var(--spacing-xl);
+	}
+
+	.contact-link {
+		font-size: var(--font-size-base);
+		word-break: break-all;
+	}
+</style>

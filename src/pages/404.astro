@@ -1,0 +1,45 @@
+---
+import Base from "../layouts/Base.astro";
+import RansomTitle from "../components/RansomTitle.astro";
+---
+
+<Base title="ページが見つかりません">
+	<div class="not-found">
+		<RansomTitle text="404" as="p" />
+		<h1>このページは、どこかへ飛んでいったようです</h1>
+		<p class="hand">風で飛ばされたか、まだ貼っていないページかもしれません。</p>
+		<div class="not-found-links">
+			<a href="/" class="btn-label">表紙にもどる</a>
+			<a href="/work" class="btn-label" style="--btn-bg: var(--c-cyan); --btn-rot: 2deg">
+				作品を見る
+			</a>
+		</div>
+	</div>
+</Base>
+
+<style>
+	.not-found {
+		text-align: center;
+		padding: var(--spacing-4xl) var(--spacing-lg);
+		max-width: var(--max-width);
+		margin: 0 auto;
+	}
+
+	.not-found h1 {
+		margin-top: var(--spacing-2xl);
+		font-size: var(--font-size-xl);
+	}
+
+	.not-found p.hand {
+		margin: var(--spacing-md) 0 var(--spacing-2xl);
+		font-size: var(--font-size-lg);
+		color: var(--color-muted);
+	}
+
+	.not-found-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-md);
+		justify-content: center;
+	}
+</style>

@@ -1,0 +1,281 @@
+/*
+  theme.css -- スクラップブック風テーマ
+
+  方針：「見た目ははちゃめちゃ、操作はまじめ」
+  - 傾き・テープ・ステッカーで遊ぶ
+  - 本文は白い紙の上に置き、文字は大きく、コントラストは高く保つ
+  - 「整頓モード」（html.tidy）と prefers-reduced-motion では傾きと動きを止める
+
+  トークン（色・文字・余白）はこのファイルの :root にまとめる。
+  色は light-dark(<ライト>, <ダーク>) で両方のモードを一度に書く。
+*/
+
+:root {
+	/* 紙とインク */
+	--color-bg: light-dark(#f3ead7, #1f1c19);
+	--color-surface: light-dark(#fffdf7, #2b2723);
+	--color-text: light-dark(#1d1a16, #f5efe3);
+	--color-muted: light-dark(#5b5147, #c9bfb0);
+	--color-border: light-dark(#1d1a16, #f5efe3);
+	--color-grid: light-dark(rgb(29 26 22 / 0.08), rgb(245 239 227 / 0.07));
+
+	/* 文房具の色（テープ・ステッカー・マーカー） */
+	--c-pink: #ff6fae;
+	--c-yellow: #ffd23f;
+	--c-cyan: #3ec6e0;
+	--c-green: #7bd389;
+	--c-orange: #ff7a3d;
+	--c-purple: #9b7bff;
+	--c-ink: #1d1a16;
+
+	--color-brand: light-dark(#e0356f, #ff8fc0);
+	--color-on-brand: #fff;
+	--color-brand-ring: var(--c-cyan);
+
+	/* 文字 */
+	--font-weight-heading: 400;
+	--font-weight-display: 400;
+	--font-size-base: 1.0625rem;
+	--font-size-4xl: clamp(2.5rem, 7vw, 5rem);
+	--leading-normal: 1.8;
+	--leading-relaxed: 1.9;
+
+	/* 形 */
+	--radius: 2px;
+	--shadow-paper: 2px 3px 0 rgb(0 0 0 / 0.18), 6px 10px 18px rgb(0 0 0 / 0.12);
+	--shadow-lift: 4px 6px 0 rgb(0 0 0 / 0.2), 12px 22px 32px rgb(0 0 0 / 0.18);
+	--wobble: 1; /* 傾きの強さ。整頓モードで 0 になる */
+}
+
+@supports not (color: light-dark(#000, #fff)) {
+	:root {
+		--color-bg: #f3ead7;
+		--color-surface: #fffdf7;
+		--color-text: #1d1a16;
+		--color-muted: #5b5147;
+		--color-border: #1d1a16;
+		--color-grid: rgb(29 26 22 / 0.08);
+		--color-brand: #e0356f;
+	}
+}
+
+/* 整頓モード：傾き・動きを止めて読みやすさ優先にする */
+:root.tidy {
+	--wobble: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--wobble: 0;
+	}
+}
+
+@media (max-width: 640px) {
+	:root {
+		--wobble: 0.5;
+	}
+}
+
+/* 方眼ノートの背景 */
+body {
+	background-color: var(--color-bg);
+	background-image:
+		linear-gradient(var(--color-grid) 1px, transparent 1px),
+		linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+	background-size: 24px 24px;
+	overflow-x: hidden;
+}
+
+::selection {
+	background: var(--c-yellow);
+	color: var(--c-ink);
+}
+
+/* キーボード操作の位置をはっきり見せる */
+:focus-visible {
+	outline: 3px dashed var(--color-brand);
+	outline-offset: 4px;
+}
+
+/* ------------------------------------------------------------------
+   共通パーツ
+   ------------------------------------------------------------------ */
+
+/* マスキングテープ（要素の ::before に貼る） */
+.tape {
+	position: relative;
+}
+
+.tape::before {
+	content: "";
+	position: absolute;
+	top: -12px;
+	left: 50%;
+	width: 96px;
+	height: 26px;
+	translate: -50% 0;
+	rotate: calc(var(--tape-rot, -4deg) * var(--wobble));
+	background: var(--tape-color, var(--c-yellow));
+	opacity: 0.85;
+	mask-image: linear-gradient(
+		90deg,
+		transparent 0 3px,
+		#000 3px calc(100% - 3px),
+		transparent calc(100% - 3px)
+	);
+	box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+	z-index: 2;
+	pointer-events: none;
+}
+
+/* 白い紙（本文を読むところ） */
+.paper {
+	background: var(--color-surface);
+	color: var(--color-text);
+	box-shadow: var(--shadow-paper);
+	padding: clamp(1.25rem, 4vw, 3rem);
+}
+
+/* 罫線入りの紙 */
+.paper--ruled {
+	background-image: repeating-linear-gradient(
+		transparent 0 calc(1.9em - 1px),
+		light-dark(rgb(62 198 224 / 0.25), rgb(62 198 224 / 0.15)) calc(1.9em - 1px) 1.9em
+	);
+	background-color: var(--color-surface);
+	background-position: 0 0.4em;
+}
+
+/* 手書きメモ */
+.hand {
+	font-family: var(--font-hand);
+}
+
+/* マーカーで引いたような強調 */
+.marker {
+	background: linear-gradient(transparent 55%, var(--marker, var(--c-yellow)) 55% 90%, transparent 90%);
+	padding: 0 0.15em;
+	color: inherit;
+}
+
+/* 丸いステッカー */
+.sticker {
+	display: inline-grid;
+	place-items: center;
+	width: 3.5rem;
+	height: 3.5rem;
+	border-radius: 50%;
+	background: var(--sticker-bg, var(--c-pink));
+	color: var(--c-ink);
+	border: 3px solid #fff;
+	box-shadow: 1px 2px 0 rgb(0 0 0 / 0.25);
+	font-size: 1.6rem;
+	line-height: 1;
+	rotate: calc(12deg * var(--wobble));
+}
+
+/* 押せるものはラベルシール風 */
+.btn-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5em;
+	min-height: 44px;
+	padding: 0.5rem 1.1rem;
+	font-family: var(--font-body);
+	font-weight: 700;
+	font-size: var(--font-size-sm);
+	color: var(--c-ink);
+	background: var(--btn-bg, var(--c-yellow));
+	border: 2px solid var(--c-ink);
+	box-shadow: 3px 3px 0 var(--c-ink);
+	text-decoration: none;
+	cursor: pointer;
+	rotate: calc(var(--btn-rot, -1.5deg) * var(--wobble));
+	transition:
+		translate var(--transition-fast),
+		box-shadow var(--transition-fast),
+		rotate var(--transition-fast);
+}
+
+.btn-label:hover {
+	translate: -2px -2px;
+	box-shadow: 5px 5px 0 var(--c-ink);
+	rotate: 0deg;
+}
+
+.btn-label:active {
+	translate: 2px 2px;
+	box-shadow: 1px 1px 0 var(--c-ink);
+}
+
+/* ラベルテープ風の小見出し */
+.label-tape {
+	display: inline-block;
+	padding: 0.3rem 0.9rem;
+	font-family: var(--font-body);
+	font-weight: 700;
+	font-size: var(--font-size-base);
+	letter-spacing: 0.08em;
+	color: light-dark(#fff, var(--c-ink));
+	background: light-dark(var(--c-ink), var(--c-yellow));
+	rotate: calc(-2deg * var(--wobble));
+	box-shadow: 2px 2px 0 var(--label-shadow, var(--c-pink));
+}
+
+/* 本文（Portable Text）の共通スタイル */
+.prose {
+	font-size: var(--font-size-base);
+	line-height: var(--leading-relaxed);
+}
+
+.prose :where(p, ul, ol) {
+	margin-bottom: 1.2em;
+}
+
+.prose :where(ul, ol) {
+	padding-inline-start: 1.4em;
+}
+
+.prose :where(h2) {
+	display: inline-block;
+	margin: 2em 0 0.8em;
+	font-size: var(--font-size-xl);
+	background: linear-gradient(transparent 60%, var(--c-cyan) 60% 92%, transparent 92%);
+}
+
+.prose :where(h3) {
+	margin: 1.6em 0 0.5em;
+	font-size: var(--font-size-lg);
+}
+
+.prose :where(blockquote) {
+	margin: 2em 0;
+	padding: 1rem 1.25rem;
+	font-family: var(--font-hand);
+	font-size: var(--font-size-lg);
+	background: light-dark(#fff6b3, #4a4222);
+	box-shadow: var(--shadow-paper);
+	rotate: calc(-1deg * var(--wobble));
+}
+
+.prose :where(a) {
+	color: var(--color-brand);
+	text-underline-offset: 3px;
+	text-decoration-thickness: 2px;
+}
+
+.prose :where(img) {
+	margin: 2em 0;
+	border: 8px solid #fff;
+	box-shadow: var(--shadow-paper);
+}
+
+/* 動きを止めたいとき */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}

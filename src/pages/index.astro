@@ -1,0 +1,232 @@
+---
+import { getEmDashCollection, getSiteSettings } from "emdash";
+import Base from "../layouts/Base.astro";
+import ProjectCard from "../components/ProjectCard.astro";
+import RansomTitle from "../components/RansomTitle.astro";
+
+// 設定と最新の作品 6 件を並行して取る。件数と並び順は DB 側で決める
+const [settings, projectsResult] = await Promise.all([
+	getSiteSettings(),
+	getEmDashCollection("projects", {
+		orderBy: { published_at: "desc" },
+		limit: 6,
+	}),
+]);
+if (projectsResult.error) {
+	return new Response("Could not load the portfolio", { status: 500 });
+}
+const { entries: featuredProjects, cacheHint } = projectsResult;
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const siteTitle = settings?.title || "Scrapbook";
+const tagline = settings?.tagline || "つくったものの切り抜き帳";
+---
+
+<Base>
+	<section class="hero">
+		<span class="sticker hero-sticker hero-sticker--1" aria-hidden="true">✨</span>
+		<span class="sticker hero-sticker hero-sticker--2" aria-hidden="true">🍙</span>
+		<span class="hero-doodle hand" aria-hidden="true">← ここ、ぜんぶ手作り</span>
+		<RansomTitle text={siteTitle} />
+		<p class="hero-tagline paper tape">
+			<span class="marker">{tagline}</span>
+		</p>
+		<div class="hero-actions">
+			<a href="/work" class="btn-label">作品をぜんぶ見る →</a>
+			<a href="/about" class="btn-label" style="--btn-bg: var(--c-cyan); --btn-rot: 2deg">
+				わたしについて
+			</a>
+		</div>
+	</section>
+
+	{
+		featuredProjects.length > 0 ? (
+			<section class="featured" aria-labelledby="featured-title">
+				<header class="section-header">
+					<h2 id="featured-title" class="label-tape">
+						最近の切り抜き
+					</h2>
+					<a href="/work" class="section-link hand">
+						もっと見る →
+					</a>
+				</header>
+				<div class="projects-grid">
+					{featuredProjects.map((project, i) => (
+						<ProjectCard
+							title={project.data.title}
+							summary={project.data.summary}
+							featuredImage={project.data.featured_image}
+							href={`/work/${project.id}`}
+							client={project.data.client}
+							year={project.data.year}
+							note={project.data.note}
+							sticker={project.data.sticker}
+							edit={project.edit}
+							index={i}
+							headingLevel="h3"
+						/>
+					))}
+				</div>
+			</section>
+		) : (
+			<section class="empty-state paper tape">
+				<h2>まだ何も貼られていません</h2>
+				<p>管理画面から最初の作品を追加しましょう。</p>
+				<a href="/_emdash/admin/content/projects/new" class="btn-label">
+					作品を追加する
+				</a>
+			</section>
+		)
+	}
+</Base>
+
+<style>
+	.hero {
+		position: relative;
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-4xl) var(--spacing-lg) var(--spacing-3xl);
+		text-align: center;
+	}
+
+	.hero-tagline {
+		display: inline-block;
+		margin-top: var(--spacing-2xl);
+		padding: var(--spacing-md) var(--spacing-xl);
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+		rotate: calc(-1.5deg * var(--wobble));
+	}
+
+	.hero-actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--spacing-md);
+		margin-top: var(--spacing-xl);
+	}
+
+	.hero-sticker {
+		position: absolute;
+		width: 4.5rem;
+		height: 4.5rem;
+		font-size: 2rem;
+	}
+
+	.hero-sticker--1 {
+		top: var(--spacing-2xl);
+		left: 8%;
+		--sticker-bg: var(--c-yellow);
+	}
+
+	.hero-sticker--2 {
+		bottom: var(--spacing-2xl);
+		right: 8%;
+		--sticker-bg: var(--c-green);
+		rotate: calc(-18deg * var(--wobble));
+	}
+
+	.hero-doodle {
+		position: absolute;
+		top: 38%;
+		right: 4%;
+		font-size: var(--font-size-lg);
+		color: var(--color-brand);
+		rotate: calc(-8deg * var(--wobble));
+	}
+
+	.featured {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: 0 var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--spacing-2xl);
+	}
+
+	.section-link {
+		font-size: var(--font-size-lg);
+		color: var(--color-brand);
+	}
+
+	/* 3 列。真ん中の列だけ少し下げて「貼った感」を出す */
+	.projects-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--spacing-3xl) var(--spacing-2xl);
+	}
+
+	.projects-grid > :global(:nth-child(3n + 2)) {
+		margin-top: calc(var(--spacing-2xl) * var(--wobble));
+	}
+
+	.empty-state {
+		max-width: 480px;
+		margin: 0 auto var(--spacing-4xl);
+		text-align: center;
+	}
+
+	.empty-state h2 {
+		font-size: var(--font-size-xl);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.empty-state p {
+		color: var(--color-muted);
+		margin-bottom: var(--spacing-lg);
+	}
+
+	@media (max-width: 960px) {
+		.projects-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		.projects-grid > :global(:nth-child(3n + 2)) {
+			margin-top: 0;
+		}
+
+		.projects-grid > :global(:nth-child(2n)) {
+			margin-top: calc(var(--spacing-2xl) * var(--wobble));
+		}
+
+		.hero-doodle {
+			display: none;
+		}
+	}
+
+	@media (max-width: 600px) {
+		.hero {
+			padding-top: var(--spacing-3xl);
+		}
+
+		.hero-sticker {
+			width: 3rem;
+			height: 3rem;
+			font-size: 1.4rem;
+		}
+
+		.hero-sticker--1 {
+			top: var(--spacing-md);
+			left: 4%;
+		}
+
+		.hero-sticker--2 {
+			top: var(--spacing-md);
+			bottom: auto;
+			right: 4%;
+		}
+
+		.projects-grid {
+			grid-template-columns: 1fr;
+			padding: 0 var(--spacing-sm);
+		}
+
+		.projects-grid > :global(:nth-child(2n)) {
+			margin-top: 0;
+		}
+	}
+</style>
