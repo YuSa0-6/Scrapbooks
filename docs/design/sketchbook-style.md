@@ -3,7 +3,7 @@ type: Design
 title: スケッチブックの見た目
 description: クリーム色の画用紙に、手描きの線・水彩のにじみ・マスキングテープ・写真コーナーで貼る、あたたかい見た目の決まり。
 tags: [design, visual]
-generated: { by: claude-code/2.1.284, at: 2026-09-29T10:00:00Z }
+generated: { by: claude-code/2.1.284, at: 2026-09-29T10:50:00Z }
 sources:
   - id: mockup
     resource: https://claude.ai/artifact/Tt3s6BFKnYQkxLzD4GZjBT
@@ -85,6 +85,7 @@ sources:
 
 - ページの背景（画用紙・水彩のにじみ・紙の質感）は `body::before` の固定レイヤー 1 枚。上端のリング綴じは `Base.astro` の `.binding`（繰り返し背景）
 - 現在のページは、メニューの文字を赤ペンの手描きの丸（`aria-hidden` の SVG）で囲む。`aria-current="page"` はリンクに付いたまま
+- スマホ（幅 720px 以下）では、メニューを 2 段目に置く。余白をつめて 4 つとも 1 段に入れ（幅 390px で確認）、それでも入らない狭い幅では折り返す。横にスクロールして隠れることはない
 
 # 部品の置きかえ（第 1 段階の見た目から）
 

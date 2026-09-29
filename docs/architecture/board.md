@@ -3,7 +3,7 @@ type: Architecture
 title: ボード
 description: 表紙のボード。自由配置・ドラッグ・シャッフル・3D の机を、transform だけで動かす。
 tags: [architecture, board, 3d]
-generated: { by: claude-code/2.1.284, at: 2026-09-29T07:15:00Z }
+generated: { by: claude-code/2.1.284, at: 2026-09-29T10:50:00Z }
 ---
 
 # ファイル
@@ -26,6 +26,15 @@ generated: { by: claude-code/2.1.284, at: 2026-09-29T07:15:00Z }
 - 初めの表示で跳ねないように、JS が並べ終わるまでボードを `visibility: hidden` にする。`<head>` の小さなスクリプトで `html.js` を付け、`html.js .board[data-pending]` だけを隠す（JS がなければ格子で見える）
 - 幅やカードの高さが変わったとき（画像・フォントの読み込み、画面の幅の変更）は、`ResizeObserver` が見つけて配置をやり直す。動かして保存した位置と CMS の位置はそのまま、自動配置のカードだけが並べ直される。ドラッグ中はやり直さない
 - 4 秒たっても JS が並べ終わらないときは、`<head>` のスクリプトが `data-pending` を外し、格子で見えるようにする（保険）
+
+# 画面の外のカードのあとまわし
+
+格子で並べるとき（幅 760px 以下）は、`.board-piece` に `content-visibility: auto` を付けて、画面の外のカードの整形と描画をあとにまわす（[performance](/architecture/performance.md)）。
+
+- `contain-intrinsic-size: auto 420px`：描かれる前の高さの目安。1 度描かれると実際の高さを覚える
+- `overflow-clip-margin: 48px`：描画の切り取りで、はみ出すテープ・ステッカー・影が欠けないようにする
+- `@supports (overflow-clip-margin: 1px)` のときだけ付ける。対応していないブラウザ（Safari など）では付けず、今までどおり全部を先に描く（欠けるより遅い方を選ぶ）
+- 自由配置（`.is-free`）には付けない。読み上げ・Tab・ページ内検索は変わらない
 
 # ドラッグ
 

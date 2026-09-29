@@ -2,6 +2,10 @@
 
 ## 2026-09-29
 
+- **Changed** 第 3 段階の作業 4（全体の確認）：好きなものを読み込むと表紙の長いタスクが予算 950ms に届く回が出たので、幅 760px 以下では画面の外のカードの整形をあとまわしにした（`content-visibility: auto`）。3 回とも 557〜593ms（[performance](/architecture/performance.md)・[board](/architecture/board.md)）。`pnpm perf` の詳細ページは一覧の最初のリンクから選ぶ
+- **Fixed** 幅 390px でメニューの「れんらく」が画面の外に隠れていた。余白をつめて 4 つとも 1 段に入れた（[sketchbook-style](/design/sketchbook-style.md)）
+- **Changed** README を今の見た目と機能に書き直し、スクリーンショットを見本だけのデータで撮り直した。concept の「はちゃめちゃ」を「あたたかい手描き」に直した
+
 - **Changed** 第 3 段階の作業 3：カードと部品の見た目をスケッチブックにした。絵は白いふちの写真（写真コーナーかテープ。id で決まる）と、形に切り抜いた絵の手描きの線。裏は罫線の紙に手書き。コードは罫線ノートの切れ端（破れた紙は疑似要素の `clip-path`、影は別の層）。裏返しボタン・FAB・項目・結果表示は手描きの枠とクレヨン色（形が変わるばねは残した）。ステッカー・詳細ページ・about・contact・404 も同じ見た目にした（[sketchbook-style](/design/sketchbook-style.md)・[cards](/architecture/cards.md)・[sticker-plugin](/architecture/sticker-plugin.md)）
 - **Changed** 罫線ノートの行の高さ（`--rule-h`）に本文の行と段落の間をそろえた。古い色名 `--c-*`・`--color-grid` を削除した。`:root.dark` に抜けていたリングの色を足した。モーフの回転にも `--wobble` を掛けた
 - **Added** 第 3 段階の作業 2：好きなものの読み込み `pnpm load:favorites`（`scripts/load-favorites.mjs`）。画像・絵・タグ・似顔絵を EmDash の CLI と API で入れ、何度実行しても重複しない。`projects.back_image`（裏の絵）と `pages.avatar`（似顔絵）を足し、絵のカードの裏と about に出す（[favorites](/architecture/favorites.md)・[flip-cards](/design/flip-cards.md)）

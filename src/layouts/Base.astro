@@ -715,17 +715,19 @@ function isCurrent(url: string): boolean {
 					margin-left: auto;
 				}
 
-				/* スマホではメニューを 2 段目に横並び。スクロールで追えるようにする */
+				/* スマホではメニューを 2 段目に横並び。4 つとも見えるように、余白をつめる（入りきらない幅では折り返す） */
 				.nav-links {
 					order: 3;
 					width: 100%;
 					margin-left: 0;
-					flex-wrap: nowrap;
-					overflow-x: auto;
+					gap: 2px;
 					padding: var(--spacing-xs) 8px var(--spacing-sm);
 				}
 
 				.nav-links a {
+					min-width: 44px;
+					padding: 0 6px;
+					justify-content: center;
 					white-space: nowrap;
 				}
 

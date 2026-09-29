@@ -267,4 +267,22 @@ const { pieces, label, isAdmin = false } = Astro.props;
 			padding: 0 var(--spacing-sm);
 		}
 	}
+
+	/*
+	  せまい画面（格子に並べるとき）は、画面の外のカードの整形と描画をあとにまわす。
+	  日本語の文字の整形が重く、16 枚ぶんを最初にまとめて解くと長いタスクが約 2 倍になるため。
+	  読み上げ・Tab・ページ内検索はそのまま使える（フォーカスが入ると描かれる）。
+	  高さの目安は、1 度描かれたあと実際の高さを覚える（auto）。
+	*/
+	@media (max-width: 760px) {
+		/* overflow-clip-margin に対応していないブラウザ（Safari）では付けない（テープ・ステッカーが欠けるため） */
+		@supports (overflow-clip-margin: 1px) {
+			.board:not(.is-free) .board-piece {
+				content-visibility: auto;
+				contain-intrinsic-size: auto 420px;
+				/* 描画の切り取り（paint containment）から、はみ出すテープ・ステッカー・影を守る */
+				overflow-clip-margin: 48px;
+			}
+		}
+	}
 </style>

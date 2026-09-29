@@ -4,6 +4,7 @@
 //   pnpm perf --json              JSON で出す
 //   pnpm perf --strict            「未対応」も失敗として扱う
 //   BASE_URL=http://127.0.0.1:4321 pnpm perf   開発サーバーで測る（JS の大きさは対象外）
+// 詳細ページは /code と /work の最初のカードのリンクから選ぶ（見本だけでも、好きなものを読み込んだあとでも測れる）
 import { createRequire } from "node:module";
 import { gzipSync } from "node:zlib";
 
@@ -35,7 +36,8 @@ const BUDGET = {
 	longTaskMs: 950, // 目標は 300ms。Klee One 1 書体の実測（3 回の最大 791ms）の約 1.2 倍（performance.md の「長いタスクの床」）
 	frameP95Ms: 20,
 };
-const ROUTES = ["/", "/work", "/code", "/code/wavy-lines", "/work/meridian-brand"];
+// 詳細ページは一覧の最初のリンクから選ぶ（見本だけでも、好きなものを読み込んだあとでも測れる）
+const ROUTES = ["/", "/work", "/code"];
 const SETTLE_MS = 5000; // 読み込みから測る時間
 const PHASE_MS = 1000; // 操作 1 つあたりの時間
 
@@ -278,6 +280,12 @@ try {
 	if (!check?.ok) {
 		console.error(`${baseUrl} に応答がありません。pnpm build のあと pnpm preview --host 127.0.0.1 --port 4322 で起動してください。`);
 		process.exit(2);
+	}
+
+	for (const [list, detail] of [["/code", "/code/"], ["/work", "/work/"]]) {
+		const html = await (await fetch(baseUrl + list)).text();
+		const slug = html.match(new RegExp(`href="${detail}([a-z0-9][a-z0-9-]*)"`))?.[1];
+		if (slug) ROUTES.push(detail + slug);
 	}
 
 	for (const route of ROUTES) {
