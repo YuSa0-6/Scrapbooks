@@ -637,6 +637,133 @@
 		],
 		"snippets": [
 			{
+				"id": "hydrangea-palette",
+				"slug": "hydrangea-palette",
+				"status": "published",
+				"data": {
+					"title": "紫陽花の色",
+					"language": "html",
+					"code": "<!doctype html>\n<html>\n<head>\n<style>\n  /* 紫陽花の写真から拾った色。写真を 150×200 に縮め、花びらの画素だけを k-means で 6 色にまとめた */\n  body {\n    margin: 0;\n    min-height: 100vh;\n    display: grid;\n    place-items: center;\n    background: #f8f2e4;\n    font-family: system-ui, sans-serif;\n  }\n  .palette {\n    display: flex;\n    gap: 12px;\n  }\n  .chip {\n    width: 72px;\n    height: 110px;\n    border-radius: 36px 36px 12px 12px;\n    background: var(--c);\n    box-shadow: 2px 4px 0 rgb(59 49 40 / 0.18);\n    display: flex;\n    align-items: flex-end;\n    justify-content: center;\n    padding-bottom: 10px;\n    box-sizing: border-box;\n    font-size: 11px;\n    color: var(--ink, #3b3128);\n    animation: bloom 900ms cubic-bezier(0.34, 1.4, 0.64, 1) both;\n    animation-delay: calc(var(--i) * 90ms);\n  }\n  @keyframes bloom {\n    from { transform: translateY(24px) scale(0.6); opacity: 0; }\n  }\n</style>\n</head>\n<body>\n  <div class=\"palette\">\n    <div class=\"chip\" style=\"--c:#dad4d6; --i:0\">#dad4d6</div>\n    <div class=\"chip\" style=\"--c:#cd8ce0; --i:1\">#cd8ce0</div>\n    <div class=\"chip\" style=\"--c:#8d5cc5; --i:2; --ink:#fff\">#8d5cc5</div>\n    <div class=\"chip\" style=\"--c:#664190; --i:3; --ink:#fff\">#664190</div>\n    <div class=\"chip\" style=\"--c:#b5aaa0; --i:4\">#b5aaa0</div>\n    <div class=\"chip\" style=\"--c:#57642f; --i:5; --ink:#fff\">#57642f</div>\n  </div>\n</body>\n</html>\n",
+					"runnable": true,
+					"summary": "紫陽花の写真から、花びらの色だけを 6 色に拾ったパレット。",
+					"note": "この色でサイトも塗りたい",
+					"sticker": "",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "写真を 150×200 に縮め、葉の緑を除いた明るい画素だけを k-means で 6 色にまとめました。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "拾った色",
+									"_key": "k3"
+								}
+							],
+							"_key": "k2"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "白 #dad4d6、ライラック #cd8ce0、紫 #8d5cc5、濃い紫 #664190、灰 #b5aaa0、葉の緑 #57642f。",
+									"_key": "k5"
+								}
+							],
+							"_key": "k4"
+						}
+					]
+				},
+				"taxonomies": {
+					"tag": [
+						"color"
+					]
+				}
+			},
+			{
+				"id": "senko-hanabi",
+				"slug": "senko-hanabi",
+				"status": "published",
+				"data": {
+					"title": "線香花火",
+					"language": "html",
+					"code": "<!doctype html>\n<html>\n<body style=\"margin:0;background:#120d0a;overflow:hidden\">\n<canvas id=\"c\"></canvas>\n<script>\n  // 線香花火：火の玉から火花が飛び、途中で枝分かれしながら消えていく\n  const c = document.getElementById(\"c\");\n  const g = c.getContext(\"2d\");\n  const sparks = [];\n  const MAX = 900; // 火花の上限（重くならないように）\n\n  function resize() {\n    c.width = innerWidth * devicePixelRatio;\n    c.height = innerHeight * devicePixelRatio;\n  }\n  addEventListener(\"resize\", resize);\n  resize();\n\n  function spark(x, y, angle, speed, life, depth) {\n    if (sparks.length < MAX) sparks.push({ x, y, px: x, py: y, angle, speed, life, depth });\n  }\n\n  function frame() {\n    const s = devicePixelRatio;\n    const cx = c.width / 2;\n    const cy = c.height * 0.45;\n\n    // 少しずつ暗くして、火花の軌跡を残す\n    g.globalCompositeOperation = \"source-over\";\n    g.fillStyle = \"rgba(18, 13, 10, 0.2)\";\n    g.fillRect(0, 0, c.width, c.height);\n\n    // 火の玉から、ときどき新しい火花\n    for (let i = 0; i < 3; i++) {\n      if (Math.random() < 0.6) {\n        spark(cx, cy, Math.random() * Math.PI * 2, (5 + Math.random() * 6) * s, 1, 0);\n      }\n    }\n\n    g.globalCompositeOperation = \"lighter\";\n    g.lineCap = \"round\";\n    for (let i = sparks.length - 1; i >= 0; i--) {\n      const p = sparks[i];\n      p.px = p.x;\n      p.py = p.y;\n      p.x += Math.cos(p.angle) * p.speed;\n      p.y += Math.sin(p.angle) * p.speed + 0.15 * s; // 少しだけ落ちる\n      p.speed *= 0.955;\n      p.angle += (Math.random() - 0.5) * 0.25;\n      p.life -= 0.016 + p.depth * 0.012;\n\n      // 途中で 2〜3 本に枝分かれする（松葉のような形になる）\n      if (p.depth < 3 && p.life < 0.85 && Math.random() < 0.12) {\n        const n = 3 + (Math.random() < 0.5 ? 2 : 0);\n        for (let k = 0; k < n; k++) {\n          spark(p.x, p.y, p.angle + (Math.random() - 0.5) * 2.2, p.speed * 1.4 + 1.5 * s, p.life, p.depth + 1);\n        }\n        p.life = 0;\n      }\n\n      if (p.life <= 0) {\n        sparks.splice(i, 1);\n        continue;\n      }\n      g.strokeStyle = `rgba(255, ${190 + p.depth * 15}, ${110 + p.depth * 30}, ${p.life})`;\n      g.lineWidth = (2 - p.depth * 0.4) * s;\n      g.beginPath();\n      g.moveTo(p.px, p.py);\n      g.lineTo(p.x, p.y);\n      g.stroke();\n    }\n\n    // 火の玉\n    const r = 6 * s;\n    const glow = g.createRadialGradient(cx, cy, 0, cx, cy, r * 4);\n    glow.addColorStop(0, \"rgba(255, 250, 235, 1)\");\n    glow.addColorStop(0.25, \"rgba(255, 200, 120, 0.8)\");\n    glow.addColorStop(1, \"rgba(255, 120, 40, 0)\");\n    g.fillStyle = glow;\n    g.beginPath();\n    g.arc(cx, cy, r * 4, 0, Math.PI * 2);\n    g.fill();\n\n    requestAnimationFrame(frame);\n  }\n  requestAnimationFrame(frame);\n</script>\n</body>\n</html>\n",
+					"runnable": true,
+					"summary": "火の玉から飛んだ火花が、途中で 3〜5 本に枝分かれしながら消えていく。松葉のような形になる。",
+					"note": "写真を見ながら書いた",
+					"sticker": "",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "線香花火の写真を見ながら、火花の枝分かれをまねしました。",
+									"_key": "k1"
+								}
+							],
+							"_key": "k0"
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "ポイント",
+									"_key": "k3"
+								}
+							],
+							"_key": "k2"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "火花は途中で数本に分かれ、分かれるほど細く、早く消えます。画面を少しずつ暗く塗り重ねると、火花の通り道が残って、写真の長時間露光のようになります。",
+									"_key": "k5"
+								}
+							],
+							"_key": "k4"
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "重くならないように、火花の数は 900 本までにしています。",
+									"_key": "k7"
+								}
+							],
+							"_key": "k6"
+						}
+					]
+				},
+				"taxonomies": {
+					"tag": [
+						"generative",
+						"motion"
+					]
+				}
+			},
+			{
 				"id": "wavy-lines",
 				"slug": "wavy-lines",
 				"status": "published",

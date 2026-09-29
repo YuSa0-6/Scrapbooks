@@ -152,3 +152,6 @@ uploads/
 .wrangler/
 .dev.vars
 .dev.vars.*
+
+# 持ち主の写真・絵（公開してよいか確認が取れるまで git に入れない。scripts/load-favorites.mjs で読み込む）
+.private-media/

@@ -2,6 +2,11 @@
 
 ## 2026-09-29
 
+- **Added** スケッチブックの見た目（[sketchbook-style](/design/sketchbook-style.md)）、好きなものの読み込み（[favorites](/architecture/favorites.md)）、第 3 段階の作業（[phase-3](/tasks/phase-3.md)）
+- **Decision** 日本語の Web フォントは Klee One 600 だけにする（[fonts](/decisions/fonts.md)）
+- **Open Question** 持ち主の写真と絵を公開リポジトリに入れてよいか（[private-media](/decisions/private-media.md)）
+- **Changed** 原則を「あたたかい手描き」に変えた。公開の手順に、この作業環境では静的ファイルを上げられないことと Git 連携での出し方を書いた。Micro の大きさを実測の約 7KB に直した
+
 - **Added** OKF 形式のドキュメント一式を作成（プロダクト・デザイン・アーキテクチャ・決定事項・ガイド・作業）
 - **Decision** 3D は CSS の 3D 変形で作り、WebGL は使わない（[css-3d](/decisions/css-3d.md)）
 - **Decision** Cloudflare の操作は `cf` CLI、Worker のアップロードだけ wrangler（[cf-cli](/decisions/cf-cli.md)）
