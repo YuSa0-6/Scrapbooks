@@ -17,6 +17,8 @@ interface Props {
 	title: string;
 	summary?: string;
 	featuredImage: MediaValue;
+	/** 裏返したときに大きく出す 2 枚目の絵（任意） */
+	backImage?: MediaValue;
 	href: string;
 	client?: string;
 	year?: string;
@@ -34,6 +36,7 @@ const {
 	title,
 	summary,
 	featuredImage,
+	backImage,
 	href,
 	client,
 	year,
@@ -89,8 +92,18 @@ const cardStyle = [
 				}
 			</div>
 		</div>
-		<div slot="back" class="flip-sheet art-back">
-			<p class="back-title hand" aria-hidden="true">— うら —</p>
+		<div slot="back" class:list={["flip-sheet", "art-back", { "art-back--photo": backImage }]}>
+			{
+				backImage ? (
+					<div class="back-photo" {...edit?.back_image}>
+						<Image image={backImage} />
+					</div>
+				) : (
+					<p class="back-title hand" aria-hidden="true">
+						— うら —
+					</p>
+				)
+			}
 			{
 				note && (
 					<p class="card-note hand" {...edit?.note}>
@@ -302,6 +315,37 @@ const cardStyle = [
 	.back-title {
 		font-size: var(--font-size-sm);
 		color: #5b5147;
+	}
+
+	/* 裏の絵：面の幅いっぱいに大きく出し、メモは絵の下に小さく残す */
+	.art-back--photo {
+		padding-top: var(--spacing-md);
+		gap: var(--spacing-xs);
+	}
+
+	.back-photo {
+		overflow: hidden;
+		background: #ddd;
+		border-radius: 6px;
+	}
+
+	.back-photo :global(img) {
+		width: 100%;
+		aspect-ratio: 1;
+		object-fit: cover;
+	}
+
+	.art-card--polaroid .back-photo :global(img) {
+		aspect-ratio: 4 / 3;
+	}
+
+	.art-back--photo .card-note {
+		font-size: var(--font-size-base);
+	}
+
+	.art-back--photo .card-summary {
+		font-size: var(--font-size-xs);
+		line-height: 1.5;
 	}
 
 	.back-more {

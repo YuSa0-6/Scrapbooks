@@ -38,6 +38,11 @@
 					"required": true
 				},
 				{
+					"slug": "back_image",
+					"label": "裏の絵（裏返したときに出す）",
+					"type": "image"
+				},
+				{
 					"slug": "client",
 					"label": "Client",
 					"type": "string"
@@ -235,6 +240,11 @@
 					"type": "string",
 					"required": true,
 					"searchable": true
+				},
+				{
+					"slug": "avatar",
+					"label": "似顔絵",
+					"type": "image"
 				},
 				{
 					"slug": "content",

@@ -17,6 +17,7 @@
     "typecheck": "astro check",
     "check:docs": "node scripts/check-okf.mjs",
     "perf": "node scripts/perf.mjs",
+    "load:favorites": "node scripts/load-favorites.mjs",
     "verify": "pnpm typecheck && node scripts/check-okf.mjs"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 ---
 import { getSeoMeta } from "emdash";
 import { loadEntry, runPage } from "../lib/content";
-import { PortableText } from "emdash/ui";
+import { Image, PortableText } from "emdash/ui";
 import Base from "../layouts/Base.astro";
 
 const loaded = await runPage(loadEntry("pages", "about"), "Could not load the page");
@@ -31,6 +31,13 @@ const seo = getSeoMeta(page, {
 			<h1 class="about-title" {...page.edit.title}>
 				<span class="marker">{page.data.title}</span>
 			</h1>
+			{
+				page.data.avatar && (
+					<figure class="about-avatar hand-frame" {...page.edit.avatar}>
+						<Image image={page.data.avatar} />
+					</figure>
+				)
+			}
 		</header>
 
 		<div class="about-content paper paper--ruled tape prose" {...page.edit.content}>
@@ -75,6 +82,27 @@ const seo = getSeoMeta(page, {
 
 	.about-header {
 		grid-column: 1 / -1;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	/* 似顔絵：手描きの丸の中に入れる（線は .hand-frame、形は少しゆがんだ丸） */
+	.about-avatar {
+		flex: none;
+		border-radius: 56% 44% 52% 48% / 47% 55% 45% 53%;
+		width: clamp(120px, 22vw, 180px);
+		aspect-ratio: 1;
+		overflow: hidden;
+		box-shadow: var(--shadow-paper);
+		rotate: calc(3deg * var(--wobble));
+	}
+
+	.about-avatar :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
 	}
 
 	.about-title {

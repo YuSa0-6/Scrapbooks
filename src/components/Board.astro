@@ -30,6 +30,7 @@ export type BoardPiece =
 	| (Common & {
 			kind: "art";
 			featuredImage: MediaValue;
+			backImage?: MediaValue;
 			client?: string;
 			year?: string;
 			frame?: string;
@@ -72,6 +73,7 @@ const { pieces, label, isAdmin = false } = Astro.props;
 							title={piece.title}
 							summary={piece.summary}
 							featuredImage={piece.featuredImage}
+							backImage={piece.backImage}
 							href={piece.href}
 							client={piece.client}
 							year={piece.year}

@@ -2,6 +2,8 @@
 
 ## 2026-09-29
 
+- **Added** 第 3 段階の作業 2：好きなものの読み込み `pnpm load:favorites`（`scripts/load-favorites.mjs`）。画像・絵・タグ・似顔絵を EmDash の CLI と API で入れ、何度実行しても重複しない。`projects.back_image`（裏の絵）と `pages.avatar`（似顔絵）を足し、絵のカードの裏と about に出す（[favorites](/architecture/favorites.md)・[flip-cards](/design/flip-cards.md)）
+- **Changed** 動いている開発用の DB へ項目を足す手順を書いた（[development](/guides/development.md)）
 - **Changed** 第 3 段階の作業 1：見た目をスケッチブックにした。色トークン（昼・夜）と共通パーツ（手描きの枠・マスキングテープ・写真コーナー・蛍光ペンの見出し）を `theme.css` に、画用紙・リング綴じ・手書きのメニュー（現在地は赤ペンの丸）を `Base.astro` に、大見出しを `HandTitle`（`RansomTitle` は削除）にした。ボードの案内文を今の機能に合わせた（[sketchbook-style](/design/sketchbook-style.md)）
 - **Changed** 日本語の Web フォントを Klee One 600 の 1 つにした。表紙の長いタスクは 1434〜1784ms から 764〜791ms に、フォントのファイルは 148 から 49 になった。長いタスクの予算を 1800ms から 950ms に決め直した（[fonts](/decisions/fonts.md)・[performance](/architecture/performance.md)）
 
