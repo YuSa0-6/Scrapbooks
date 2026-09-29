@@ -76,7 +76,10 @@ const { label } = Astro.props;
 		transform: rotateY(180deg);
 	}
 
-	/* 裏返すボタン：右下の丸いシール。リンクの外に置き、リンクの覆いより上に出す */
+	/*
+	  裏返すボタン：右下の手描きの丸いシール（黄色のクレヨン）。リンクの外に置き、リンクの覆いより上に出す。
+	  押すと少し小さくなり、ホバーで丸の形が変わる（動かすのは border-radius / scale / rotate だけ）。
+	*/
 	.flip-btn {
 		display: none;
 		position: absolute;
@@ -87,14 +90,15 @@ const { label } = Astro.props;
 		width: 44px;
 		height: 44px;
 		padding: 0;
-		color: var(--c-ink);
-		background: var(--c-yellow);
-		border: 2px solid var(--c-ink);
-		border-radius: 50%;
-		box-shadow: 2px 2px 0 var(--c-ink);
+		color: var(--crayon-ink);
+		background: var(--crayon-yellow);
+		border: 2px solid var(--color-text);
+		border-radius: var(--hand-round);
+		box-shadow: var(--shadow-crayon);
 		cursor: pointer;
 		transition:
 			scale var(--spring-fast),
+			border-radius var(--spring-fast),
 			background var(--fade-fast);
 	}
 
@@ -105,6 +109,7 @@ const { label } = Astro.props;
 
 	.flip-btn:hover {
 		scale: 1.1;
+		border-radius: var(--hand-round-alt);
 	}
 
 	.flip-btn:active {
@@ -112,7 +117,7 @@ const { label } = Astro.props;
 	}
 
 	.flip-btn[aria-pressed="true"] {
-		background: var(--c-cyan);
+		background: var(--crayon-blue);
 	}
 
 	.flip-btn svg {
@@ -178,7 +183,7 @@ const { label } = Astro.props;
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		background: var(--sheet-bg, #fffdf7);
+		background: var(--sheet-bg, var(--color-surface));
 		box-shadow: var(--shadow-paper);
 	}
 

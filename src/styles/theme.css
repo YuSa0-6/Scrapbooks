@@ -49,21 +49,14 @@
 	--ring-a: #8a8378; /* リング綴じの金具（ふち） */
 	--ring-b: #d9d4cb; /* リング綴じの金具（ハイライト） */
 	--ring-hole: rgb(59 49 40 / 0.8); /* リングを通す穴 */
+	--color-canvas: #fff; /* iframe の中身の下地。中身が背景を決めないときも読めるように、昼夜とも白 */
 	--color-danger: #b3261e;
 
-	/* 古いトークン名（第 1・2 段階のファイル用）。新しい色へ向けている。新しい所では使わない */
-	--c-pink: var(--crayon-pink);
-	--c-yellow: var(--crayon-yellow);
-	--c-cyan: var(--crayon-blue);
-	--c-green: var(--crayon-sage);
-	--c-orange: var(--crayon-peach);
-	--c-purple: var(--crayon-lilac);
-	--c-ink: var(--crayon-ink);
+	/* テンプレートの tokens.css と EmDash の部品が読む名前。スケッチブックの色へ向けている（サイトの CSS では使わない） */
 	--color-brand: var(--color-accent);
 	--color-on-brand: var(--color-surface);
 	--color-brand-ring: var(--crayon-blue);
 	--color-border: var(--color-text);
-	--color-grid: transparent;
 
 	/* 文字：本文は端末の日本語フォント。見出し・手書きは Klee One 600（--font-hand は astro.config.mjs の fonts が作る） */
 	--font-body: system-ui, "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif;
@@ -78,11 +71,21 @@
 	/* 手描きの枠のいびつな角（2 種類。交互に使うと手で描いた感じになる） */
 	--hand-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
 	--hand-radius-alt: 15px 255px 15px 225px / 225px 15px 255px 15px;
+	/* 手描きの丸（似顔絵・丸いボタン・シール）。少しゆがんだ丸 */
+	--hand-round: 56% 44% 52% 48% / 47% 55% 45% 53%;
+	--hand-round-alt: 45% 55% 47% 53% / 55% 46% 54% 45%;
+	/* 手描きの小さな枠（写真・iframe・吹き出し・状態の表示）。文章や絵を切りすぎない、ゆるいいびつさ */
+	--hand-radius-soft: 16px 6px 14px 8px / 8px 14px 6px 16px;
+	--hand-radius-soft-alt: 6px 16px 8px 14px / 14px 8px 16px 6px;
 
 	/* 形 */
 	--radius: 2px;
 	--shadow-paper: 1px 2px 0 rgb(59 49 40 / 0.15), 4px 8px 16px rgb(59 49 40 / 0.1);
 	--shadow-lift: 2px 4px 0 rgb(59 49 40 / 0.18), 10px 20px 30px rgb(59 49 40 / 0.16);
+	--shadow-crayon: 2px 3px 0 rgb(59 49 40 / 0.3); /* クレヨンのボタンの下に敷く、ずらした影（動かさない） */
+	--shadow-tear: rgb(59 49 40 / 0.2); /* 破れた紙・切り抜きの下に敷く影の色（影用の層の background に使う） */
+	/* 下が破れた紙の形（clip-path）。破れは 8px の深さで、紙の高さによらず同じ */
+	--paper-tear: polygon(0 0, 100% 0, 100% calc(100% - 8px), 94% 100%, 88% calc(100% - 8px), 82% 100%, 76% calc(100% - 8px), 70% 100%, 64% calc(100% - 8px), 58% 100%, 52% calc(100% - 8px), 46% 100%, 40% calc(100% - 8px), 34% 100%, 28% calc(100% - 8px), 22% 100%, 16% calc(100% - 8px), 10% 100%, 4% calc(100% - 8px), 0 100%);
 	--wobble: 1; /* 傾きの強さ。整頓モードで 0 になる */
 
 	/* 3D の机（表紙のボード）。角度には --wobble を掛けて使う */
@@ -176,6 +179,7 @@
 		--ring-a: #5c574f;
 		--ring-b: #a8a298;
 		--ring-hole: rgb(0 0 0 / 0.7);
+		--shadow-tear: rgb(0 0 0 / 0.4);
 		--color-danger: #f2b8b5;
 	}
 }
@@ -197,7 +201,10 @@
 	--paper-grain: rgb(239 230 214 / 0.02);
 	--rule-line: rgb(160 178 230 / 0.2);
 	--rule-margin: rgb(214 150 165 / 0.4);
-	--ring-metal: linear-gradient(90deg, #5c574f, #a8a298 45%, #5c574f);
+	--ring-a: #5c574f;
+	--ring-b: #a8a298;
+	--ring-hole: rgb(0 0 0 / 0.7);
+	--shadow-tear: rgb(0 0 0 / 0.4);
 	--color-danger: #f2b8b5;
 }
 
@@ -330,13 +337,19 @@ body::before {
 	padding: clamp(1.25rem, 4vw, 3rem);
 }
 
-/* 罫線ノートの紙：青い罫線と、左の赤い余白線 */
+/*
+  罫線ノートの紙：青い罫線と、左の赤い余白線。
+  罫線の間隔は 1 行の高さ（--rule-h）。本文の行の高さと余白を --rule-h の倍数にして、文字を罫線の上に乗せる。
+  上下に 1 行ぶんの余白を空けるので、罫線は紙の上端から --rule-h ごとに引ける。
+  引用・写真のように高さが決まらないものの後では、罫線と行が少しずれる。
+*/
 .paper--ruled {
+	--rule-h: calc(var(--font-size-base) * var(--leading-relaxed));
 	background-color: var(--color-surface);
 	background-image:
 		linear-gradient(90deg, transparent 30px, var(--rule-margin) 30px 32px, transparent 32px),
-		repeating-linear-gradient(transparent 0 calc(1.9em - 1px), var(--rule-line) calc(1.9em - 1px) 1.9em);
-	background-position: 0 0, 0 0.4em;
+		repeating-linear-gradient(transparent 0 calc(var(--rule-h) - 1px), var(--rule-line) calc(var(--rule-h) - 1px) var(--rule-h));
+	padding-block: var(--rule-h);
 	padding-inline-start: clamp(3rem, 7vw, 4.5rem);
 }
 
@@ -359,7 +372,7 @@ body::before {
 	place-items: center;
 	width: 3.5rem;
 	height: 3.5rem;
-	border-radius: 50%;
+	border-radius: var(--hand-round);
 	background: var(--sticker-bg, var(--crayon-pink));
 	color: var(--crayon-ink);
 	border: 2px solid var(--color-text);
@@ -425,7 +438,7 @@ body::before {
 .morph-host:focus-within .morph,
 .morph:hover {
 	clip-path: var(--shape-to, var(--shape-sunny));
-	rotate: var(--morph-rot, 30deg);
+	rotate: calc(var(--morph-rot, 30deg) * var(--wobble));
 	scale: var(--morph-scale, 1.08);
 }
 
@@ -487,6 +500,22 @@ body::before {
 	color: var(--color-accent);
 	text-underline-offset: 3px;
 	text-decoration-thickness: 2px;
+}
+
+/* 罫線ノートの上の本文：1 行＝--rule-h。段落の間は 1 行あける */
+.paper--ruled.prose {
+	line-height: var(--rule-h);
+}
+
+.paper--ruled.prose :where(p, ul, ol) {
+	margin-bottom: var(--rule-h);
+}
+
+.paper--ruled.prose :where(h2, h3) {
+	display: block;
+	width: fit-content;
+	margin: 0;
+	line-height: var(--rule-h);
 }
 
 /* 本文の中の写真：白いふちの写真 */

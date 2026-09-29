@@ -85,12 +85,12 @@ const seo = getSeoMeta(snippet, {
 
 		{
 			live && (
-				<section class="stage tape" aria-labelledby="stage-title">
+				<section class="stage tape" style="--tape-color: var(--crayon-blue)" aria-labelledby="stage-title">
 					<div class="stage-head">
 						<h2 id="stage-title" class="stage-title">
 							動かしてみる
 						</h2>
-						<button type="button" class="btn-label stage-replay" data-replay style="--btn-bg: var(--c-green)">
+						<button type="button" class="btn-label stage-replay" data-replay style="--btn-bg: var(--crayon-sage)">
 							<svg viewBox="0 0 24 24" aria-hidden="true">
 								<path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v5h5" />
 							</svg>
@@ -251,13 +251,14 @@ const seo = getSeoMeta(snippet, {
 		font-weight: 700;
 	}
 
+	/* 手書きのメモは赤ペン */
 	.snippet-note {
 		font-size: var(--font-size-xl);
-		color: var(--color-brand);
+		color: var(--color-accent);
 		rotate: calc(-1.5deg * var(--wobble));
 	}
 
-	/* 実行結果の舞台 */
+	/* 実行結果の舞台：テープで貼った紙に、手描きの枠の窓 */
 	.stage {
 		padding: var(--spacing-lg);
 		background: var(--color-surface);
@@ -291,8 +292,8 @@ const seo = getSeoMeta(snippet, {
 		width: 100%;
 		aspect-ratio: 16 / 10;
 		border: 2px solid var(--color-text);
-		border-radius: 16px;
-		background: #fff;
+		border-radius: var(--hand-radius-soft);
+		background: var(--color-canvas);
 	}
 
 	.stage-note {
@@ -301,37 +302,65 @@ const seo = getSeoMeta(snippet, {
 		color: var(--color-muted);
 	}
 
-	/* コードの紙 */
+	/*
+	  コードの紙：罫線ノート（左に赤い余白線、下が破れた紙）。罫線の間隔は 28px で、コードの行の高さも 28px。
+	  紙は ::after（clip-path）、影は ::before（同じ形をずらした層）。clip-path は自分の box-shadow を切るので、影は別の層にする。
+	  上に 1 行ぶんの余白（28px）。
+	*/
 	.code-sheet {
+		--rl: 28px;
+		--margin-x: 38px; /* 赤い余白線の位置 */
 		position: relative;
-		padding: var(--spacing-lg);
-		background-color: var(--color-surface);
-		background-image:
-			linear-gradient(var(--color-grid) 1px, transparent 1px),
-			linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
-		background-size: 12px 12px;
-		box-shadow: var(--shadow-paper);
+		isolation: isolate;
+		padding: var(--rl) var(--spacing-lg) calc(var(--rl) * 2) calc(var(--margin-x) + 18px);
 	}
 
+	.code-sheet::before,
+	.code-sheet::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		clip-path: var(--paper-tear);
+		pointer-events: none;
+	}
+
+	.code-sheet::before {
+		z-index: -2;
+		background: var(--shadow-tear);
+		translate: 3px 6px;
+	}
+
+	.code-sheet::after {
+		z-index: -1;
+		background-color: var(--color-surface);
+		background-image:
+			linear-gradient(90deg, transparent var(--margin-x), var(--rule-margin) var(--margin-x) calc(var(--margin-x) + 2px), transparent calc(var(--margin-x) + 2px)),
+			repeating-linear-gradient(transparent 0 calc(var(--rl) - 1px), var(--rule-line) calc(var(--rl) - 1px) var(--rl));
+	}
+
+	/* 1 行目（2 行ぶんの高さ）：見出しとコピーのボタン */
 	.code-sheet-head {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: var(--spacing-md);
+		height: calc(var(--rl) * 2);
 	}
 
 	.code-sheet-title {
 		font-size: var(--font-size-lg);
+		line-height: var(--rl);
 	}
 
 	.code-body {
-		padding: var(--spacing-md) var(--spacing-lg);
-		background: var(--color-surface);
-		border: 2px solid var(--color-text);
-		border-radius: 16px;
+		min-width: 0;
 	}
 
-	/* M3E のボタン：押すと角が変わり、完了するとアイコンがモーフする */
+	.code-body :global(.shiki) {
+		font-size: 0.875rem;
+		line-height: var(--rl);
+	}
+
+	/* M3E のボタン：手描きの枠に黄色のクレヨン。押すと形が変わり、完了するとアイコンがモーフする */
 	.copy-btn {
 		display: inline-flex;
 		align-items: center;
@@ -341,10 +370,11 @@ const seo = getSeoMeta(snippet, {
 		font-family: var(--font-body);
 		font-size: var(--font-size-sm);
 		font-weight: 700;
-		color: var(--c-ink);
-		background: var(--c-yellow);
-		border: 2px solid var(--c-ink);
-		border-radius: 999px;
+		color: var(--crayon-ink);
+		background: var(--crayon-yellow);
+		border: 2px solid var(--color-text);
+		border-radius: var(--hand-radius);
+		box-shadow: var(--shadow-crayon);
 		cursor: pointer;
 		transition:
 			border-radius var(--spring-fast),
@@ -352,14 +382,18 @@ const seo = getSeoMeta(snippet, {
 			background var(--fade-fast);
 	}
 
+	.copy-btn:hover {
+		border-radius: var(--hand-radius-alt);
+	}
+
 	.copy-btn:active {
 		scale: 0.94;
-		border-radius: 12px;
+		border-radius: var(--hand-round);
 	}
 
 	.copy-btn.is-done {
-		background: var(--c-green);
-		border-radius: 14px;
+		background: var(--crayon-sage);
+		border-radius: var(--hand-round-alt);
 	}
 
 	.copy-icon {
@@ -424,8 +458,9 @@ const seo = getSeoMeta(snippet, {
 			grid-template-columns: minmax(0, 1fr);
 		}
 
-		.code-body {
-			padding: var(--spacing-sm) var(--spacing-md);
+		.code-sheet {
+			--margin-x: 24px;
+			padding-right: var(--spacing-md);
 		}
 	}
 </style>

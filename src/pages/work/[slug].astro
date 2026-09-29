@@ -5,7 +5,7 @@ import { loadCollection, loadEntry, runPage } from "../../lib/content";
 import { Image, PortableText } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import ArtCard from "../../components/ArtCard.astro";
-import { transitionName } from "../../lib/pieces";
+import { mountFor, transitionName } from "../../lib/pieces";
 
 const slug = decodeSlug(Astro.params.slug);
 
@@ -45,6 +45,9 @@ if (Astro.cache?.enabled) {
 }
 
 const gallery = project.data.gallery;
+// 主役の写真の留め方（カードと同じ：id で決まる）と、ギャラリーのテープの色
+const mount = mountFor(project.data.id);
+const galleryTapes = ["var(--crayon-pink)", "var(--crayon-blue)", "var(--crayon-yellow)", "var(--crayon-sage)"];
 
 function safeExternalUrl(value: string | undefined): string | undefined {
 	if (!value) return undefined;
@@ -124,11 +127,13 @@ const seo = getSeoMeta(project, {
 		{
 			project.data.featured_image && (
 				<figure
-					class="featured-image tape"
+					class:list={["featured-image", { tape: mount === "tape" }]}
 					style={`view-transition-name: ${transitionName("art", project.data.id)}`}
 					{...project.edit.featured_image}
 				>
-					<Image image={project.data.featured_image} />
+					<div class:list={["featured-photo", { "photo-corners": mount === "corners" }]}>
+						<Image image={project.data.featured_image} />
+					</div>
 					{project.data.sticker && (
 						<span class="sticker featured-sticker" aria-hidden="true">
 							{project.data.sticker}
@@ -143,9 +148,22 @@ const seo = getSeoMeta(project, {
 			)
 		}
 
-		<div class="project-content paper paper--ruled prose" {...project.edit.content}>
-			<PortableText value={project.data.content} />
-		</div>
+		{
+			project.data.back_image && (
+				<figure class="back-figure tape" {...project.edit.back_image}>
+					<Image image={project.data.back_image} />
+					<figcaption class="hand">うらがわ</figcaption>
+				</figure>
+			)
+		}
+
+		{
+			project.data.content && project.data.content.length > 0 && (
+				<div class="project-content paper paper--ruled prose" {...project.edit.content}>
+					<PortableText value={project.data.content} />
+				</div>
+			)
+		}
 
 		{
 			gallery && gallery.length > 0 && (
@@ -153,7 +171,7 @@ const seo = getSeoMeta(project, {
 					{gallery.map((item, i) => (
 						<figure
 							class="gallery-item tape"
-							style={`--g: ${[-2.5, 2, -1, 3][i % 4]}deg; --tape-color: ${["var(--c-pink)", "var(--c-cyan)", "var(--c-yellow)", "var(--c-green)"][i % 4]}`}
+							style={`--g: ${[-2.5, 2, -1, 3][i % 4]}deg; --tape-color: ${galleryTapes[i % 4]}`}
 						>
 							<Image image={item.image} />
 							{item.caption && <figcaption class="hand">{item.caption}</figcaption>}
@@ -237,23 +255,30 @@ const seo = getSeoMeta(project, {
 		margin-bottom: var(--spacing-lg);
 	}
 
+	/* 主役の写真：白いふちの写真。テープか写真コーナーで留める（カードと同じ留め方） */
 	.featured-image {
 		position: relative;
 		margin: var(--spacing-2xl) 0 var(--spacing-3xl);
 		padding: 14px 14px 0;
-		background: #fffdf7;
+		background: var(--color-surface);
 		box-shadow: var(--shadow-paper);
 		rotate: calc(-1.2deg * var(--wobble));
 	}
 
-	.featured-image :global(img) {
+	.featured-photo :global(img) {
 		width: 100%;
 	}
 
+	/* 写真コーナーは写真のすみに。ふちの内側に収める */
+	.featured-photo.photo-corners::after {
+		inset: -4px;
+	}
+
+	/* 手書きのメモは赤ペン */
 	.featured-image figcaption {
 		padding: var(--spacing-sm) var(--spacing-xs) var(--spacing-md);
 		font-size: var(--font-size-lg);
-		color: #c2185b;
+		color: var(--color-accent);
 	}
 
 	.featured-image:not(:has(figcaption)) {
@@ -269,6 +294,23 @@ const seo = getSeoMeta(project, {
 		font-size: 2rem;
 	}
 
+	/* 裏の絵：主役の写真より小さく、反対向きに傾けて貼る */
+	.back-figure {
+		--tape-color: var(--crayon-lilac);
+		width: min(100%, 420px);
+		margin: calc(-1 * var(--spacing-xl)) 0 var(--spacing-3xl) auto;
+		padding: 12px 12px 0;
+		background: var(--color-surface);
+		box-shadow: var(--shadow-paper);
+		rotate: calc(1.8deg * var(--wobble));
+	}
+
+	.back-figure figcaption {
+		padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-lg);
+		color: var(--color-muted);
+	}
+
 	.project-gallery {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -278,10 +320,10 @@ const seo = getSeoMeta(project, {
 
 	.gallery-item {
 		padding: 10px;
-		background: #fffdf7;
+		background: var(--color-surface);
 		box-shadow: var(--shadow-paper);
 		rotate: calc(var(--g) * var(--wobble));
-		transition: rotate var(--transition-slow);
+		transition: rotate var(--spring);
 	}
 
 	.gallery-item:hover {
@@ -290,7 +332,7 @@ const seo = getSeoMeta(project, {
 
 	.gallery-item figcaption {
 		padding-top: var(--spacing-sm);
-		color: var(--c-ink);
+		color: var(--color-muted);
 	}
 
 	.more-projects {

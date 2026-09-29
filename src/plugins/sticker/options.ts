@@ -10,11 +10,11 @@ export const stickerShapes = [
 ] as const;
 
 export const stickerColors = [
-	{ value: "yellow", label: "きいろ", css: "var(--c-yellow)" },
-	{ value: "pink", label: "ピンク", css: "var(--c-pink)" },
-	{ value: "cyan", label: "みずいろ", css: "var(--c-cyan)" },
-	{ value: "green", label: "みどり", css: "var(--c-green)" },
-	{ value: "purple", label: "むらさき", css: "var(--c-purple)" },
+	{ value: "yellow", label: "きいろ", css: "var(--crayon-yellow)" },
+	{ value: "pink", label: "ピンク", css: "var(--crayon-pink)" },
+	{ value: "cyan", label: "みずいろ", css: "var(--crayon-blue)" },
+	{ value: "green", label: "みどり", css: "var(--crayon-sage)" },
+	{ value: "purple", label: "むらさき", css: "var(--crayon-lilac)" },
 ] as const;
 
 export type StickerShape = (typeof stickerShapes)[number]["value"];

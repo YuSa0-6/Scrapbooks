@@ -33,8 +33,20 @@ const seo = getSeoMeta(page, {
 			</h1>
 			{
 				page.data.avatar && (
-					<figure class="about-avatar hand-frame" {...page.edit.avatar}>
+					<figure class="about-avatar" {...page.edit.avatar}>
 						<Image image={page.data.avatar} />
+						<!-- 手で引いた丸の線（飾り）。絵より少し外側に、ずれて引く -->
+						<svg
+							class="avatar-line"
+							viewBox="0 0 268 268"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.2"
+							stroke-linecap="round"
+							aria-hidden="true"
+						>
+							<path d="M134 8c70-2 124 50 126 122 2 74-52 128-126 130C60 262 8 208 8 134 8 60 62 10 140 12" />
+						</svg>
 					</figure>
 				)
 			}
@@ -51,16 +63,16 @@ const seo = getSeoMeta(page, {
 		</div>
 
 		<aside class="about-sidebar" aria-label="ひとことメモ">
-			<section class="memo memo--yellow">
+			<section class="memo memo--yellow tape" style="--tape-color: var(--crayon-blue)">
 				<h2>すきなこと</h2>
-				<ul>
+				<ul role="list">
 					<li>ものづくり全般</li>
 					<li>Web とアプリ</li>
 					<li>ちいさな道具</li>
 				</ul>
 			</section>
 
-			<section class="memo memo--pink">
+			<section class="memo memo--pink tape" style="--tape-color: var(--crayon-sage); --tape-rot: 5deg">
 				<h2>れんらく</h2>
 				<p>
 					<a href="/contact">お便りはこちら →</a>
@@ -88,14 +100,12 @@ const seo = getSeoMeta(page, {
 		gap: var(--spacing-lg) var(--spacing-2xl);
 	}
 
-	/* 似顔絵：手描きの丸の中に入れる（線は .hand-frame、形は少しゆがんだ丸） */
+	/* 似顔絵：少しゆがんだ丸に切り抜き、外側に手描きの丸の線を引く（線は SVG。絵とは別の飾り） */
 	.about-avatar {
+		position: relative;
 		flex: none;
-		border-radius: 56% 44% 52% 48% / 47% 55% 45% 53%;
 		width: clamp(120px, 22vw, 180px);
 		aspect-ratio: 1;
-		overflow: hidden;
-		box-shadow: var(--shadow-paper);
 		rotate: calc(3deg * var(--wobble));
 	}
 
@@ -103,6 +113,17 @@ const seo = getSeoMeta(page, {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
+		border-radius: var(--hand-round);
+		box-shadow: var(--shadow-paper);
+	}
+
+	.avatar-line {
+		position: absolute;
+		inset: -6%;
+		width: 112%;
+		height: 112%;
+		color: var(--color-text);
+		pointer-events: none;
 	}
 
 	.about-title {
@@ -126,10 +147,10 @@ const seo = getSeoMeta(page, {
 		top: 96px;
 	}
 
-	/* ふせんメモ */
+	/* ふせんメモ：クレヨン色の紙をテープで貼る。文字はクレヨンの上に乗る濃い色 */
 	.memo {
 		padding: var(--spacing-lg);
-		color: var(--c-ink);
+		color: var(--crayon-ink);
 		box-shadow: var(--shadow-paper);
 	}
 
@@ -138,15 +159,35 @@ const seo = getSeoMeta(page, {
 		margin-bottom: var(--spacing-sm);
 	}
 
+	/* 箇条書きの印は、鉛筆の絵（マスク）。文字ではなく絵で描く */
 	.memo ul {
-		list-style: "✎ ";
-		padding-inline-start: 1.2em;
+		list-style: none;
 		font-family: var(--font-hand);
+		font-weight: 600;
 		font-size: var(--font-size-lg);
+	}
+
+	.memo li {
+		position: relative;
+		padding-inline-start: 1.6em;
+	}
+
+	.memo li::before {
+		content: "";
+		position: absolute;
+		inset-inline-start: 0;
+		top: 0.5em;
+		width: 1em;
+		height: 1em;
+		background: currentColor;
+		-webkit-mask: var(--pencil) center / contain no-repeat;
+		mask: var(--pencil) center / contain no-repeat;
+		--pencil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 25 23 8c1.6-1.6 3.8.6 2.2 2.2L8.3 27.1 4.6 28z'/%3E%3C/svg%3E");
 	}
 
 	.memo p {
 		font-family: var(--font-hand);
+		font-weight: 600;
 		font-size: var(--font-size-lg);
 	}
 
@@ -154,15 +195,17 @@ const seo = getSeoMeta(page, {
 		display: inline-flex;
 		align-items: center;
 		min-height: 44px;
+		text-decoration: underline wavy currentColor 1.5px;
+		text-underline-offset: 6px;
 	}
 
 	.memo--yellow {
-		background: #fff3a3;
+		background: var(--crayon-yellow);
 		rotate: calc(2deg * var(--wobble));
 	}
 
 	.memo--pink {
-		background: #ffc7df;
+		background: var(--crayon-pink);
 		rotate: calc(-3deg * var(--wobble));
 	}
 

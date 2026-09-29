@@ -16,8 +16,8 @@ export function tiltFor(id: string, tilt?: number | null): number {
 	return (hash(id) % 81) / 10 - 4;
 }
 
-const tapes = ["var(--c-yellow)", "var(--c-pink)", "var(--c-cyan)", "var(--c-green)"];
-const stickers = ["var(--c-pink)", "var(--c-yellow)", "var(--c-green)", "var(--c-purple)"];
+const tapes = ["var(--crayon-yellow)", "var(--crayon-pink)", "var(--crayon-blue)", "var(--crayon-sage)"];
+const stickers = ["var(--crayon-pink)", "var(--crayon-yellow)", "var(--crayon-sage)", "var(--crayon-lilac)"];
 
 export function tapeColor(id: string): string {
 	return tapes[hash(id) % tapes.length]!;
@@ -25,6 +25,11 @@ export function tapeColor(id: string): string {
 
 export function stickerColor(id: string): string {
 	return stickers[hash(`${id}:s`) % stickers.length]!;
+}
+
+/** 写真の留め方：マスキングテープか写真コーナー（id で決まるので、表示のたびに変わらない） */
+export function mountFor(id: string): "tape" | "corners" {
+	return hash(`${id}:m`) % 2 === 0 ? "tape" : "corners";
 }
 
 /** View Transitions で使う名前（ULID なので英数字だけ） */

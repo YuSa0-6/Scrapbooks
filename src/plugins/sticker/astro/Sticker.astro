@@ -1,8 +1,9 @@
 ---
 /**
  * 本文に貼るステッカー。
- * - 丸・クッキー・おひさま・お花：M3E の形。ホバーで別の形にモーフする
- * - 吹き出し・ラベル：文章として読める形
+ * - 丸・クッキー・おひさま・お花：M3E の形を淡いクレヨン色で塗り、細い手描きの線でふちどる。ホバーで別の形にモーフする
+ *   （線・色・影は、同じ形の層を重ねて作る。filter: drop-shadow は使わない）
+ * - 吹き出し：手描きの枠。ラベル：マスキングテープ（淡い縞）
  * 「飾り」にしたものは読み上げない（aria-hidden）。
  */
 import { stickerColors, stickerShapes, type StickerShape } from "../options";
@@ -23,7 +24,7 @@ const text = (node.id ?? node.text ?? "").trim();
 const shape: StickerShape = stickerShapes.some((s) => s.value === node.shape)
 	? (node.shape as StickerShape)
 	: "cookie";
-const color = stickerColors.find((c) => c.value === node.color)?.css ?? "var(--c-yellow)";
+const color = stickerColors.find((c) => c.value === node.color)?.css ?? "var(--crayon-yellow)";
 const decorative = node.decorative !== false;
 
 // 形ごとに、ホバーしたときの行き先の形を決める
@@ -49,6 +50,8 @@ const tilt = (seed % 13) - 6;
 			{
 				isShaped ? (
 					<span class="morph-host st-shape-host">
+						<span class="morph st-shape-shadow" />
+						<span class="morph st-shape-line" />
 						<span class="morph st-shape" />
 						<span class="st-shape-text">{text}</span>
 					</span>
@@ -66,7 +69,7 @@ const tilt = (seed % 13) - 6;
 		display: flex;
 	}
 
-	/* M3E の形のステッカー */
+	/* M3E の形のステッカー：影 → 手描きの線 → 淡いクレヨン色 の順に、同じ形の層を重ねる */
 	.st-shape-host {
 		position: relative;
 		display: grid;
@@ -74,12 +77,25 @@ const tilt = (seed % 13) - 6;
 		width: 7.5rem;
 		aspect-ratio: 1;
 		rotate: calc(var(--st-tilt) * var(--wobble));
-		filter: drop-shadow(2px 3px 0 rgb(0 0 0 / 0.25));
+	}
+
+	.st-shape-host > .morph {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	.st-shape-shadow {
+		background: var(--shadow-tear);
+		translate: 2px 4px;
+	}
+
+	.st-shape-host > .st-shape-line {
+		inset: -3px;
+		background: var(--color-text);
 	}
 
 	.st-shape {
-		position: absolute;
-		inset: 0;
 		background: var(--st-color);
 	}
 
@@ -90,21 +106,22 @@ const tilt = (seed % 13) - 6;
 		font-size: 1rem;
 		line-height: 1.25;
 		text-align: center;
-		color: var(--c-ink);
+		color: var(--crayon-ink);
 	}
 
-	/* 吹き出し */
+	/* 吹き出し：手描きの枠。しっぽも同じ線で描く */
 	.sticker-block--bubble .st-text {
 		position: relative;
 		max-width: 28rem;
 		padding: 0.8rem 1.3rem;
 		font-family: var(--font-hand);
+		font-weight: 600;
 		font-size: var(--font-size-lg);
 		line-height: 1.6;
-		color: var(--c-ink);
-		background: #fff;
-		border: 3px solid var(--c-ink);
-		border-radius: 24px;
+		color: var(--color-text);
+		background: var(--color-surface);
+		border: 2px solid var(--color-text);
+		border-radius: var(--hand-radius-soft);
 		box-shadow: 4px 4px 0 var(--st-color);
 		rotate: calc(var(--st-tilt) * 0.4 * var(--wobble));
 		transition: rotate var(--spring), transform var(--spring);
@@ -114,12 +131,13 @@ const tilt = (seed % 13) - 6;
 		content: "";
 		position: absolute;
 		left: 2rem;
-		bottom: -14px;
+		bottom: -13px;
 		width: 22px;
 		height: 22px;
-		background: #fff;
-		border-right: 3px solid var(--c-ink);
-		border-bottom: 3px solid var(--c-ink);
+		background: var(--color-surface);
+		border-right: 2px solid var(--color-text);
+		border-bottom: 2px solid var(--color-text);
+		border-bottom-right-radius: 6px;
 		rotate: 45deg;
 	}
 
@@ -127,14 +145,22 @@ const tilt = (seed % 13) - 6;
 		rotate: 0deg;
 	}
 
-	/* ラベルテープ */
+	/* ラベル：マスキングテープ。淡い縞に、切れた端のぎざぎざ */
 	.sticker-block--label .st-text {
-		padding: 0.35rem 1rem;
-		font-weight: 700;
+		padding: 0.35rem 1.5rem;
+		font-family: var(--font-hand);
+		font-weight: 600;
 		letter-spacing: 0.08em;
-		color: #fff;
-		background: var(--c-ink);
-		box-shadow: 4px 4px 0 var(--st-color);
+		color: var(--crayon-ink);
+		background: repeating-linear-gradient(
+			45deg,
+			var(--st-color) 0 6px,
+			color-mix(in srgb, var(--st-color) 78%, var(--color-canvas)) 6px 12px
+		);
+		clip-path: polygon(
+			0 0, 100% 0, 98% 17%, 100% 33%, 98% 50%, 100% 67%, 98% 83%, 100% 100%,
+			0 100%, 2% 83%, 0 67%, 2% 50%, 0 33%, 2% 17%
+		);
 		rotate: calc(var(--st-tilt) * 0.5 * var(--wobble));
 	}
 
