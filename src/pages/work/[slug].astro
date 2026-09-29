@@ -1,10 +1,7 @@
 ---
-import {
-	decodeSlug,
-	getEmDashCollection,
-	getEmDashEntry,
-	getSeoMeta,
-} from "emdash";
+import { decodeSlug, getSeoMeta } from "emdash";
+import { Effect } from "effect";
+import { loadCollection, loadEntry, runPage } from "../../lib/content";
 import { Image, PortableText } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import ArtCard from "../../components/ArtCard.astro";
@@ -16,27 +13,28 @@ if (!slug) {
 	return Astro.redirect("/404");
 }
 
-const {
-	entry: project,
-	error,
-	cacheHint: projectCacheHint,
-} = await getEmDashEntry("projects", slug);
-
-if (error) return new Response("Could not load the project", { status: 500 });
+// 1 件と「ほかの絵」は並行に読む。ほかの絵は、日付順に少し多め（3 件）に取って
+// 今のものを除く（全部読んでから 2 件に切るより軽い）
+const loaded = await runPage(
+	Effect.all(
+		{
+			result: loadEntry("projects", slug),
+			relatedResult: loadCollection("projects", {
+				orderBy: { published_at: "desc" },
+				limit: 3,
+			}),
+		},
+		{ concurrency: "unbounded" },
+	),
+	"Could not load the project",
+);
+if (loaded instanceof Response) return loaded;
+const { result, relatedResult } = loaded;
+const { entry: project, cacheHint: projectCacheHint } = result;
 if (!project) {
 	return Astro.redirect("/404");
 }
 
-// Related projects: order by date in the DB and request a small lookahead
-// so we can drop the current entry without re-querying. Avoids loading
-// every project just to slice off two.
-const relatedResult = await getEmDashCollection("projects", {
-	orderBy: { published_at: "desc" },
-	limit: 3,
-});
-if (relatedResult.error) {
-	return new Response("Could not load related projects", { status: 500 });
-}
 const { entries: relatedProjects, cacheHint: relatedCacheHint } = relatedResult;
 const otherProjects = relatedProjects
 	.filter((p) => p.id !== project.id)

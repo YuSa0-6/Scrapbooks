@@ -1,14 +1,12 @@
 ---
-import { getEmDashEntry, getSeoMeta } from "emdash";
+import { getSeoMeta } from "emdash";
+import { loadEntry, runPage } from "../lib/content";
 import { PortableText } from "emdash/ui";
 import Base from "../layouts/Base.astro";
 
-const {
-	entry: page,
-	error,
-	cacheHint,
-} = await getEmDashEntry("pages", "about");
-if (error) return new Response("Could not load the page", { status: 500 });
+const loaded = await runPage(loadEntry("pages", "about"), "Could not load the page");
+if (loaded instanceof Response) return loaded;
+const { entry: page, cacheHint } = loaded;
 if (!page) return Astro.redirect("/404");
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 

@@ -1,11 +1,8 @@
 ---
 export const prerender = false;
 
-import {
-	getEmDashCollection,
-	getTaxonomyTermsWithCacheHint,
-	getTermsForEntries,
-} from "emdash";
+import { Effect } from "effect";
+import { loadCollection, loadTaxonomyTerms, loadTermsForEntries, runPage } from "../../lib/content";
 import Base from "../../layouts/Base.astro";
 import CodeCard from "../../components/CodeCard.astro";
 import RansomTitle from "../../components/RansomTitle.astro";
@@ -14,18 +11,32 @@ import RansomTitle from "../../components/RansomTitle.astro";
 const activeTag = Astro.url.searchParams.get("tag");
 const cursor = Astro.url.searchParams.get("cursor") ?? undefined;
 
-const [snippetsResult, tagsResult] = await Promise.all([
-	getEmDashCollection("snippets", {
-		orderBy: { published_at: "desc" },
-		limit: 12,
-		cursor,
-		...(activeTag ? { where: { tag: activeTag } } : {}),
+// コードの一覧とタグは並行に読む。カードのタグは、コードが決まってから 1 回の JOIN でまとめて読む
+const loaded = await runPage(
+	Effect.gen(function* () {
+		const { snippetsResult, tagsResult } = yield* Effect.all(
+			{
+				snippetsResult: loadCollection("snippets", {
+					orderBy: { published_at: "desc" },
+					limit: 12,
+					cursor,
+					...(activeTag ? { where: { tag: activeTag } } : {}),
+				}),
+				tagsResult: loadTaxonomyTerms("tag", { includeCounts: false }),
+			},
+			{ concurrency: "unbounded" },
+		);
+		const tagsByEntry = yield* loadTermsForEntries(
+			"snippets",
+			snippetsResult.entries.map((s) => s.data.id),
+			"tag",
+		);
+		return { snippetsResult, tagsResult, tagsByEntry };
 	}),
-	getTaxonomyTermsWithCacheHint("tag", { includeCounts: false }),
-]);
-if (snippetsResult.error) {
-	return new Response("Could not load the code", { status: 500 });
-}
+	"Could not load the code",
+);
+if (loaded instanceof Response) return loaded;
+const { snippetsResult, tagsResult, tagsByEntry } = loaded;
 
 const { entries: sortedSnippets, nextCursor } = snippetsResult;
 const tags = tagsResult.data;
@@ -34,13 +45,6 @@ if (Astro.cache?.enabled) {
 	Astro.cache.set(tagsResult.cacheHint);
 }
 
-// Single batched JOIN for the tag pills shown on each card, instead of
-// one getEntryTerms() round-trip per card.
-const tagsByEntry = await getTermsForEntries(
-	"snippets",
-	sortedSnippets.map((p) => p.data.id),
-	"tag",
-);
 const snippetsWithTags = sortedSnippets.map((snippet) => ({
 	snippet,
 	snippetTags: tagsByEntry.get(snippet.data.id) ?? [],

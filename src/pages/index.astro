@@ -1,18 +1,24 @@
 ---
-import { getEmDashCollection, getSiteSettings } from "emdash";
+import { Effect } from "effect";
+import { loadCollection, loadSiteSettings, runPage } from "../lib/content";
 import Base from "../layouts/Base.astro";
 import Board, { type BoardPiece } from "../components/Board.astro";
 import RansomTitle from "../components/RansomTitle.astro";
 
 // 設定と、絵・コードの新しいものを並行して取る。件数と並び順は DB 側で決める
-const [settings, artResult, codeResult] = await Promise.all([
-	getSiteSettings(),
-	getEmDashCollection("projects", { orderBy: { published_at: "desc" }, limit: 10 }),
-	getEmDashCollection("snippets", { orderBy: { published_at: "desc" }, limit: 10 }),
-]);
-if (artResult.error || codeResult.error) {
-	return new Response("Could not load the scrapbook", { status: 500 });
-}
+const loaded = await runPage(
+	Effect.all(
+		{
+			settings: loadSiteSettings(),
+			artResult: loadCollection("projects", { orderBy: { published_at: "desc" }, limit: 10 }),
+			codeResult: loadCollection("snippets", { orderBy: { published_at: "desc" }, limit: 10 }),
+		},
+		{ concurrency: "unbounded" },
+	),
+	"Could not load the scrapbook",
+);
+if (loaded instanceof Response) return loaded;
+const { settings, artResult, codeResult } = loaded;
 if (Astro.cache?.enabled) {
 	Astro.cache.set(artResult.cacheHint);
 	Astro.cache.set(codeResult.cacheHint);

@@ -1,11 +1,8 @@
 ---
 export const prerender = false;
 
-import {
-	getEmDashCollection,
-	getTaxonomyTermsWithCacheHint,
-	getTermsForEntries,
-} from "emdash";
+import { Effect } from "effect";
+import { loadCollection, loadTaxonomyTerms, loadTermsForEntries, runPage } from "../../lib/content";
 import Base from "../../layouts/Base.astro";
 import ArtCard from "../../components/ArtCard.astro";
 import RansomTitle from "../../components/RansomTitle.astro";
@@ -17,18 +14,32 @@ import RansomTitle from "../../components/RansomTitle.astro";
 const activeTag = Astro.url.searchParams.get("tag");
 const cursor = Astro.url.searchParams.get("cursor") ?? undefined;
 
-const [projectsResult, tagsResult] = await Promise.all([
-	getEmDashCollection("projects", {
-		orderBy: { published_at: "desc" },
-		limit: 12,
-		cursor,
-		...(activeTag ? { where: { tag: activeTag } } : {}),
+// 絵の一覧とタグは並行に読む。カードのタグは、絵が決まってから 1 回の JOIN でまとめて読む
+const loaded = await runPage(
+	Effect.gen(function* () {
+		const { projectsResult, tagsResult } = yield* Effect.all(
+			{
+				projectsResult: loadCollection("projects", {
+					orderBy: { published_at: "desc" },
+					limit: 12,
+					cursor,
+					...(activeTag ? { where: { tag: activeTag } } : {}),
+				}),
+				tagsResult: loadTaxonomyTerms("tag", { includeCounts: false }),
+			},
+			{ concurrency: "unbounded" },
+		);
+		const tagsByEntry = yield* loadTermsForEntries(
+			"projects",
+			projectsResult.entries.map((p) => p.data.id),
+			"tag",
+		);
+		return { projectsResult, tagsResult, tagsByEntry };
 	}),
-	getTaxonomyTermsWithCacheHint("tag", { includeCounts: false }),
-]);
-if (projectsResult.error) {
-	return new Response("Could not load the portfolio", { status: 500 });
-}
+	"Could not load the portfolio",
+);
+if (loaded instanceof Response) return loaded;
+const { projectsResult, tagsResult, tagsByEntry } = loaded;
 
 const { entries: sortedProjects, nextCursor } = projectsResult;
 const tags = tagsResult.data;
@@ -37,13 +48,6 @@ if (Astro.cache?.enabled) {
 	Astro.cache.set(tagsResult.cacheHint);
 }
 
-// Single batched JOIN for the tag pills shown on each card, instead of
-// one getEntryTerms() round-trip per card.
-const tagsByEntry = await getTermsForEntries(
-	"projects",
-	sortedProjects.map((p) => p.data.id),
-	"tag",
-);
 const projectsWithTags = sortedProjects.map((project) => ({
 	project,
 	projectTags: tagsByEntry.get(project.data.id) ?? [],

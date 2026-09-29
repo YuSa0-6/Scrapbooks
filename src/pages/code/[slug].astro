@@ -1,5 +1,7 @@
 ---
-import { decodeSlug, getEmDashCollection, getEmDashEntry, getSeoMeta } from "emdash";
+import { decodeSlug, getSeoMeta } from "emdash";
+import { Effect } from "effect";
+import { loadCollection, loadEntry, runPage } from "../../lib/content";
 import { PortableText } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import CodeCard from "../../components/CodeCard.astro";
@@ -9,16 +11,24 @@ import { languageLabel, transitionName } from "../../lib/pieces";
 const slug = decodeSlug(Astro.params.slug);
 if (!slug) return Astro.redirect("/404");
 
-const { entry: snippet, error, cacheHint } = await getEmDashEntry("snippets", slug);
-if (error) return new Response("Could not load the code", { status: 500 });
+// 1 件と「ほかのコード」は並行に読む。ほかのコードは新しい順に少し多めに取り、今のものを除く
+const loaded = await runPage(
+	Effect.all(
+		{
+			result: loadEntry("snippets", slug),
+			relatedResult: loadCollection("snippets", {
+				orderBy: { published_at: "desc" },
+				limit: 3,
+			}),
+		},
+		{ concurrency: "unbounded" },
+	),
+	"Could not load the code",
+);
+if (loaded instanceof Response) return loaded;
+const { result, relatedResult } = loaded;
+const { entry: snippet, cacheHint } = result;
 if (!snippet) return Astro.redirect("/404");
-
-// ほかのコード：新しい順に少し多めに取り、今のものを除く
-const relatedResult = await getEmDashCollection("snippets", {
-	orderBy: { published_at: "desc" },
-	limit: 3,
-});
-if (relatedResult.error) return new Response("Could not load related code", { status: 500 });
 const others = relatedResult.entries.filter((s) => s.id !== snippet.id).slice(0, 2);
 if (Astro.cache?.enabled) {
 	Astro.cache.set(cacheHint);
