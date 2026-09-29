@@ -73,11 +73,13 @@ const opts = parseArgs(process.argv.slice(2));
 /** emdash の CLI を呼び、--json の結果を返す。失敗したら止める */
 function cli(args) {
 	const full = [cliPath, ...args, "--url", opts.url, "--json"];
-	if (opts.token) full.push("--token", opts.token);
+	// トークンはコマンドラインに出さず（ps で見えるため）、CLI が読む環境変数 EMDASH_TOKEN で渡す
+	const env = { ...process.env, NODE_NO_WARNINGS: "1" };
+	if (opts.token) env.EMDASH_TOKEN = opts.token;
 	const result = spawnSync(process.execPath, full, {
 		encoding: "utf8",
 		maxBuffer: 64 * 1024 * 1024,
-		env: { ...process.env, NODE_NO_WARNINGS: "1" },
+		env,
 	});
 	if (result.status !== 0) {
 		fail(`emdash ${args.slice(0, 3).join(" ")} が失敗しました\n${result.stderr || result.stdout}`);

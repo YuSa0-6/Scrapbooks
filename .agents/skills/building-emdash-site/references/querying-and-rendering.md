@@ -388,7 +388,7 @@ const { entries, nextCursor, cacheHint } = await getEmDashCollection("posts", {
 	cursor,
 	orderBy: { published_at: "desc" },
 });
-Astro.cache.set(cacheHint);
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 ---
 {entries.map(post => (
 	<a href={`/posts/${post.id}`}>{post.data.title}</a>

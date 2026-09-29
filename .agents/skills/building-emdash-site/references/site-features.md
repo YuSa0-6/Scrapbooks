@@ -489,6 +489,7 @@ import LiveSearch from "emdash/ui/search";
 
 interface Props {
 	title: string;
+	pageTitle?: string;
 	description?: string | null;
 	image?: string | null;
 	content?: { collection: string; id: string; slug?: string | null };

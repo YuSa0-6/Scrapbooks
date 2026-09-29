@@ -98,8 +98,12 @@ Runs when plugin is removed. Only delete data if `event.deleteData` is true.
 ```typescript
 "plugin:uninstall": async (event, ctx) => {
 	if (event.deleteData) {
-		const result = await ctx.storage.items!.query({ limit: 1000 });
-		await ctx.storage.items!.deleteMany(result.items.map(i => i.id));
+		// Delete in bounded batches until nothing is left.
+		for (;;) {
+			const result = await ctx.storage.items!.query({ limit: 500 });
+			if (result.items.length === 0) break;
+			await ctx.storage.items!.deleteMany(result.items.map(i => i.id));
+		}
 	}
 }
 ```
@@ -342,7 +346,7 @@ Implements email transport (e.g. Resend, SMTP, SES). Selected by the admin in Se
 	exclusive: true,
 	handler: async ({ message }, ctx) => {
 		const apiKey = await ctx.settings.get("apiKey");
-		await ctx.http!.fetch("https://api.resend.com/emails", {
+		const response = await ctx.http!.fetch("https://api.resend.com/emails", {
 			method: "POST",
 			headers: { Authorization: `Bearer ${apiKey}` },
 			body: JSON.stringify({
@@ -353,6 +357,9 @@ Implements email transport (e.g. Resend, SMTP, SES). Selected by the admin in Se
 				text: message.text,
 			}),
 		});
+		if (!response.ok) {
+			throw new Error(`Email provider rejected the message: ${response.status}`);
+		}
 	},
 },
 ```

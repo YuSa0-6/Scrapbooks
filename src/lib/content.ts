@@ -10,7 +10,7 @@ import { Data, Effect } from "effect";
 import {
 	getEmDashCollection,
 	getEmDashEntry,
-	getSiteSettings,
+	getSiteSettingsWithCacheHint,
 	getTaxonomyTermsWithCacheHint,
 	getTermsForEntries,
 	type CollectionFilter,
@@ -78,8 +78,9 @@ export const loadTermsForEntries = (collection: string, entryIds: string[], taxo
 		getTermsForEntries(collection, entryIds, taxonomy),
 	);
 
-/** サイト設定（タイトル・キャッチコピーなど） */
-export const loadSiteSettings = () => fromPromise("site-settings", () => getSiteSettings());
+/** サイト設定（タイトル・キャッチコピーなど）。data と cacheHint を返す（設定が変わったらページのキャッシュも消えるように） */
+export const loadSiteSettings = () =>
+	fromPromise("site-settings", () => getSiteSettingsWithCacheHint());
 
 /**
  * ページの境目で Effect を実行する。

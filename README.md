@@ -142,7 +142,7 @@ pnpm load:favorites
 
 ## 公開する
 
-公開の手順は [`docs/guides/deploy.md`](docs/guides/deploy.md) にあります（D1・R2 の用意、Worker の出し方、合言葉、初期設定、好きなものの読み込み）。Worker は圧縮後でおよそ 4.7MB あり、Workers の無料プランの上限（3MB）を超えるので、有料プラン（上限 10MB）が必要です。
+公開の手順は [`docs/guides/deploy.md`](docs/guides/deploy.md) にあります（D1・R2 の用意、Worker の出し方、合言葉、初期設定、好きなものの読み込み）。並べ方の公開プラグインは Worker Loader で動くので、Workers の有料プランが必要です。Worker の大きさは `pnpm build` のあと `npx wrangler deploy --dry-run --outdir bundled/` の `Total Upload`（gzip 後の値）で確かめます（上限は gzip 後で無料 3MB・有料 10MB。2026-09-29 の時点で約 4.7MB）。
 
 ## ドキュメント
 

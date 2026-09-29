@@ -79,7 +79,7 @@ const { entries, nextCursor, cacheHint } = await getEmDashCollection("posts", {
 	cursor,
 	orderBy: { published_at: "desc" },
 });
-const { entry: post, cacheHint } = await getEmDashEntry("posts", slug);
+const { entry: post, cacheHint: postCacheHint } = await getEmDashEntry("posts", slug);
 
 // Site features
 import {

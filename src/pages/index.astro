@@ -9,7 +9,7 @@ import HandTitle from "../components/HandTitle.astro";
 const loaded = await runPage(
 	Effect.all(
 		{
-			settings: loadSiteSettings(),
+			settingsResult: loadSiteSettings(),
 			artResult: loadCollection("projects", { orderBy: { published_at: "desc" }, limit: 10 }),
 			codeResult: loadCollection("snippets", { orderBy: { published_at: "desc" }, limit: 10 }),
 		},
@@ -18,8 +18,10 @@ const loaded = await runPage(
 	"Could not load the scrapbook",
 );
 if (loaded instanceof Response) return loaded;
-const { settings, artResult, codeResult } = loaded;
+const { settingsResult, artResult, codeResult } = loaded;
+const settings = settingsResult.data;
 if (Astro.cache?.enabled) {
+	Astro.cache.set(settingsResult.cacheHint);
 	Astro.cache.set(artResult.cacheHint);
 	Astro.cache.set(codeResult.cacheHint);
 }

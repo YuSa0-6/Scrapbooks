@@ -20,12 +20,16 @@ import type { BlockInteraction } from "@emdash-cms/blocks";
 
 routes: {
 	admin: {
-		handler: async (ctx) => {
-			// EmDash parses the request body once and exposes it as ctx.input;
-			// read it directly rather than ctx.request.json() (the body is consumed).
+		handler: async (routeCtx, ctx) => {
+			// EmDash parses the request body once and exposes it as routeCtx.input;
+			// read it directly rather than a request body (the body is consumed).
 			// BlockInteraction is the discriminated union of page_load,
-			// block_action, and form_submit payloads.
-			const interaction = ctx.input as BlockInteraction;
+			// block_action, and form_submit payloads. Validate before narrowing.
+			const input = routeCtx.input;
+			if (!input || typeof input !== "object" || !("type" in input)) {
+				return { blocks: [] };
+			}
+			const interaction = input as BlockInteraction;
 
 			if (interaction.type === "page_load") {
 				return {
@@ -77,6 +81,7 @@ routes: {
 | `banner`    | Info, warning, or error inline messages             |
 | `empty`     | Empty state with optional command and actions       |
 | `accordion` | Collapsible section containing nested blocks        |
+| `tab`       | Labelled panels that group nested blocks            |
 
 ## Element Types
 

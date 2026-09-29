@@ -2,7 +2,8 @@ import type { APIRoute } from "astro";
 import { getEmDashCollection, getSiteSettings } from "emdash";
 
 export const GET: APIRoute = async ({ site, url }) => {
-	const siteUrl = site?.toString() || url.origin;
+	// 末尾の / を取り、リンクが // にならないようにする
+	const siteUrl = (site?.toString() || url.origin).replace(/\/+$/, "");
 	const settings = await getSiteSettings();
 	const siteTitle = settings?.title || "Studio";
 	const siteDescription = settings?.tagline || "Design & Development";
@@ -39,7 +40,7 @@ export const GET: APIRoute = async ({ site, url }) => {
     <description>${escapeXml(siteDescription)}</description>
     <link>${siteUrl}</link>
     <atom:link href="${siteUrl}/rss.xml" rel="self" type="application/rss+xml"/>
-    <language>en-us</language>
+    <language>ja</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${items}
   </channel>
