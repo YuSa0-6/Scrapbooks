@@ -2,6 +2,8 @@
 
 ## 2026-09-29
 
+- **Decision** 持ち主の写真と絵は公開リポジトリに入れない。油絵は右の「夕焼けの海」が持ち主の作品で、左は単独では載せない（[private-media](/decisions/private-media.md)）
+
 - **Changed** 第 3 段階の作業 4（全体の確認）：好きなものを読み込むと表紙の長いタスクが予算 950ms に届く回が出たので、幅 760px 以下では画面の外のカードの整形をあとまわしにした（`content-visibility: auto`）。3 回とも 557〜593ms（[performance](/architecture/performance.md)・[board](/architecture/board.md)）。`pnpm perf` の詳細ページは一覧の最初のリンクから選ぶ
 - **Fixed** 幅 390px でメニューの「れんらく」が画面の外に隠れていた。余白をつめて 4 つとも 1 段に入れた（[sketchbook-style](/design/sketchbook-style.md)）
 - **Changed** README を今の見た目と機能に書き直し、スクリーンショットを見本だけのデータで撮り直した。concept の「はちゃめちゃ」を「あたたかい手描き」に直した

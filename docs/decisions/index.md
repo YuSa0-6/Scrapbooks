@@ -8,7 +8,4 @@
 - [初期設定のロック](setup-lock.md) - 合言葉で守る
 - [コードの色づけ](slim-shiki.md) - 使う言語だけの Shiki
 - [書体の数を絞る](fonts.md) - 日本語の Web フォントは Klee One 600 だけ
-
-# 確認待ち
-
-- [持ち主の写真と絵の置き場所](private-media.md) - 公開リポジトリに入れてよいか
+- [持ち主の写真と絵の置き場所](private-media.md) - 公開リポジトリに入れず、API で読み込む

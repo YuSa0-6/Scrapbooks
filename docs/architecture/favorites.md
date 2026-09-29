@@ -50,4 +50,4 @@ generated: { by: claude-code/2.1.284, at: 2026-09-29T11:00:00Z }
 - 新しい環境は `seed/seed.json` から作られるので、最初から項目がある
 - すでに動いている開発用の DB へは、seed を流し直さず CLI で足す（[development](/guides/development.md)）
 - 画像は長辺 1200〜1600px の WebP、位置情報などのメタデータは消してある
-- 持ち主の写真を git に入れるかは確認中（[private-media](/decisions/private-media.md)）
+- 持ち主の写真は git に入れない（[private-media](/decisions/private-media.md)）
