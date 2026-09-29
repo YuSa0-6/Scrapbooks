@@ -140,7 +140,7 @@ npx emdash content delete posts 01ABC123
 # Lifecycle
 npx emdash content publish posts 01ABC123
 npx emdash content unpublish posts 01ABC123
-npx emdash content schedule posts 01ABC123 --at <FUTURE_ISO_DATETIME>  # e.g. 2027-03-01T09:00:00Z
+npx emdash content schedule posts 01ABC123 --at 2027-03-01T09:00:00Z  # 未来の日時に置き換える
 npx emdash content restore posts 01ABC123
 ```
 
