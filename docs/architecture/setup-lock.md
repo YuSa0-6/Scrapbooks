@@ -18,6 +18,7 @@ EmDash は、初期設定が終わるまで「最初に管理画面を開いた�
 | `/_emdash/admin*?setup_key=…` | 合言葉が一致したら Cookie を付けて、同じ URL（クエリなし）へ移動 |
 | `SETUP_KEY` が未設定 | 初期設定は一切できない（閉じた側に倒す） |
 
+- 初期設定の前は、EmDash 自身のミドルウェア（`order: "pre"`）が先に動き、`/_emdash/admin` をクエリを落として `/_emdash/admin/setup` へ移す。そのため、合言葉つきの URL は **`/_emdash/admin/setup?setup_key=…`** の形で開く（ロック側は `/_emdash/admin*` のどれでも `setup_key` を受けて Cookie を付ける）
 - 開発中（`import.meta.env.DEV`）はロックしない
 - 比べるときは長さをそろえた定数時間の比較にする
 - 秘密は `cf` で Worker に入れる（[公開の手順](/guides/deploy.md)）

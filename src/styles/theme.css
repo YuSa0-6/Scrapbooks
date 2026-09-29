@@ -7,17 +7,19 @@
   - 「整頓モード」（html.tidy）と prefers-reduced-motion では傾きと動きを止める
 
   トークン（色・文字・余白）はこのファイルの :root にまとめる。
-  色は light-dark(<ライト>, <ダーク>) で両方のモードを一度に書く。
+  色トークンは、昼の値を :root に、夜の値を下の 2 か所（端末が夜のとき／「夜」を選んだとき）に書く。
+  custom property の中の light-dark() は、Chromium では「昼／夜」ボタンで切り替えても
+  値が取り直されない（読み込み時の値のまま）ため、トークンには使わない。
 */
 
 :root {
 	/* 紙とインク */
-	--color-bg: light-dark(#f3ead7, #1f1c19);
-	--color-surface: light-dark(#fffdf7, #2b2723);
-	--color-text: light-dark(#1d1a16, #f5efe3);
-	--color-muted: light-dark(#5b5147, #c9bfb0);
-	--color-border: light-dark(#1d1a16, #f5efe3);
-	--color-grid: light-dark(rgb(29 26 22 / 0.08), rgb(245 239 227 / 0.07));
+	--color-bg: #f3ead7;
+	--color-surface: #fffdf7;
+	--color-text: #1d1a16;
+	--color-muted: #5b5147;
+	--color-border: #1d1a16;
+	--color-grid: rgb(29 26 22 / 0.08);
 
 	/* 文房具の色（テープ・ステッカー・マーカー） */
 	--c-pink: #ff6fae;
@@ -28,7 +30,7 @@
 	--c-purple: #9b7bff;
 	--c-ink: #1d1a16;
 
-	--color-brand: light-dark(#e0356f, #ff8fc0);
+	--color-brand: #e0356f;
 	--color-on-brand: #fff;
 	--color-brand-ring: var(--c-cyan);
 
@@ -115,16 +117,27 @@
 	}
 }
 
-@supports not (color: light-dark(#000, #fff)) {
-	:root {
-		--color-bg: #f3ead7;
-		--color-surface: #fffdf7;
-		--color-text: #1d1a16;
-		--color-muted: #5b5147;
-		--color-border: #1d1a16;
-		--color-grid: rgb(29 26 22 / 0.08);
-		--color-brand: #e0356f;
+/* 夜の色。値は 2 か所で同じにする（端末が夜で「昼」を選んでいないとき／「夜」を選んだとき） */
+@media (prefers-color-scheme: dark) {
+	:root:not(.light) {
+		--color-bg: #1f1c19;
+		--color-surface: #2b2723;
+		--color-text: #f5efe3;
+		--color-muted: #c9bfb0;
+		--color-border: #f5efe3;
+		--color-grid: rgb(245 239 227 / 0.07);
+		--color-brand: #ff8fc0;
 	}
+}
+
+:root.dark {
+	--color-bg: #1f1c19;
+	--color-surface: #2b2723;
+	--color-text: #f5efe3;
+	--color-muted: #c9bfb0;
+	--color-border: #f5efe3;
+	--color-grid: rgb(245 239 227 / 0.07);
+	--color-brand: #ff8fc0;
 }
 
 /* 整頓モード：傾き・動きを止めて読みやすさ優先にする */

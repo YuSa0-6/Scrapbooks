@@ -67,7 +67,17 @@ const { isAdmin = false } = Astro.props;
 		toggle?.setAttribute("aria-expanded", String(open));
 	}
 
-	toggle?.addEventListener("click", () => setOpen(!fab?.classList.contains("is-open")));
+	toggle?.addEventListener("click", (event) => {
+		const open = !fab?.classList.contains("is-open");
+		setOpen(open);
+		// キーボードで開いたら、最初の項目へフォーカスを移す（項目はボタンより前にあるため、Tab では入れない）
+		if (open && event.detail === 0) {
+			const first = Array.from(fab?.querySelectorAll<HTMLElement>(".fab-item") ?? []).find(
+				(item) => !item.closest("li")?.hidden,
+			);
+			first?.focus();
+		}
+	});
 
 	// 並べ方の公開：押されたときに初めて読み込む（見る人の JS には入らない）
 	const status = fab?.querySelector<HTMLElement>("[data-fab-status]") ?? null;

@@ -90,7 +90,7 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 		<title>{fullTitle}</title>
 		<EmDashHead page={pageCtx} />
 		<style is:inline set:html={shapeStyles} />
-		<Font cssVariable="--font-heading" preload />
+		<Font cssVariable="--font-heading" preload={[{ subset: "latin" }, { subset: "kana" }]} />
 		<Font cssVariable="--font-body" />
 		<Font cssVariable="--font-hand" />
 		<link
@@ -580,6 +580,9 @@ const tapeColors = ["var(--c-yellow)", "var(--c-cyan)", "var(--c-pink)", "var(--
 			}
 
 			.footer-powered a {
+				display: inline-flex;
+				align-items: center;
+				min-height: 44px;
 				color: var(--color-text);
 			}
 

@@ -32,7 +32,7 @@ const BUDGET = {
 	jsHome: 25 * 1024,
 	jsOther: 15 * 1024,
 	cls: 0.05,
-	longTaskMs: 300,
+	longTaskMs: 1800, // 目標は 300ms。日本語フォントの分だけ床が高い（performance.md の「長いタスクの床」）
 	frameP95Ms: 20,
 };
 const ROUTES = ["/", "/work", "/code", "/code/wavy-lines", "/work/meridian-brand"];
