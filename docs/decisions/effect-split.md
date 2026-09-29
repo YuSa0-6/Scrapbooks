@@ -10,7 +10,7 @@ generated: { by: claude-code/2.1.284, at: 2026-09-29T07:15:00Z }
 
 | 場所 | 使うもの | 大きさ（gzip） |
 | --- | --- | --- |
-| サーバー（Worker） | `effect` | 約 74KB（Worker の上限 10MB に対して小さい） |
+| サーバー（Worker） | `effect` | 約 74KB（Worker の上限 64 MiB に対して小さい） |
 | ブラウザ | `effect/Micro`、管理者の操作のときだけ `import()` | 約 7KB（実際の publish の chunk） |
 
 # 理由

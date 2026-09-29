@@ -2,6 +2,8 @@
 
 ## 2026-09-29
 
+- **Changed** Worker の大きさの上限を今の値に直した。Cloudflare は 2026-09-04 に圧縮後の上限（無料 3MB・有料 10MB）をなくし、どのプランも圧縮前 64 MiB になった。このサイトは圧縮前で約 17.4 MiB。有料プランは Worker Loader のために引き続き要る（[deploy](/guides/deploy.md)・[system-overview](/architecture/system-overview.md)）
+
 - **Decision** ダムの写真は未公開にする。`load-favorites` に `hidden`（下書きに戻す一覧）を足した（[private-media](/decisions/private-media.md)）
 
 - **Decision** 持ち主の写真と絵は公開リポジトリに入れない。油絵は右の「夕焼けの海」が持ち主の作品で、左は単独では載せない（[private-media](/decisions/private-media.md)）

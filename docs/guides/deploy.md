@@ -8,7 +8,7 @@ generated: { by: claude-code/2.1.284, at: 2026-09-29T09:20:00Z }
 
 # 前提
 
-- Cloudflare の Workers 有料プラン（Worker Loader と 10MB の上限のため）
+- Cloudflare の Workers 有料プラン（Worker Loader を使うため。Worker の大きさの上限はどのプランも圧縮前で 64 MiB）
 - 環境変数 `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID`
 
 # 手順

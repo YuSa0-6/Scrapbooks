@@ -14,7 +14,7 @@ generated: { by: claude-code/2.1.284, at: 2026-09-29T07:15:00Z }
 | ページ | `Effect.all({ ... }, { concurrency: "unbounded" })`（オブジェクトの形）で並行に読む。5 秒の `Effect.timeout` は `runPage` が付ける |
 | エラー | ページの境目で `runPage`（`src/lib/content.ts`）が 500 の Response に変える。呼ぶ側は `if (loaded instanceof Response) return loaded;` で受ける |
 
-- Worker の大きさへの影響は小さい（上限 10MB に対して約 70KB）
+- Worker の大きさへの影響は小さい（上限 64 MiB に対して約 70KB）
 - `cacheHint` も Effect の結果として返し、ページで `Astro.cache.set` する
 
 # ブラウザ（`effect/Micro`）

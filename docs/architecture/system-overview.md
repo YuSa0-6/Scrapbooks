@@ -21,7 +21,7 @@ flowchart LR
 | 部分 | 採用 | 場所 |
 | --- | --- | --- |
 | サイト | Astro 7（`output: "server"`）＋ EmDash 1.0 | `src/` |
-| 実行 | Cloudflare Workers（有料プラン。Worker は圧縮後 10MB まで） | `wrangler.jsonc` |
+| 実行 | Cloudflare Workers（有料プラン。Worker は圧縮前 64 MiB まで） | `wrangler.jsonc` |
 | 内容 | D1（`DB`） | |
 | 画像 | R2（`MEDIA`） | |
 | プラグイン（信頼） | ステッカー（native） | `src/plugins/sticker/` |
