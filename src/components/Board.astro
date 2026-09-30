@@ -1,0 +1,288 @@
+---
+/**
+ * 表紙のボード。絵とコードの切り抜きを、自由な位置に貼る。
+ *
+ * - 広い画面：好きな位置に置ける（CMS の board_x / board_y、なければ自動でばらまく）。
+ *   マウスでドラッグして動かせて、位置はこの端末（localStorage）に保存する。管理者は FAB から公開できる
+ * - せまい画面・整頓モード・JavaScript なし：ふつうの格子に並べる
+ * - 並び順（読み上げ・Tab の順番）は、いつも HTML の順番のまま
+ * - 動くところは src/scripts/board/ にある（配置・ドラッグ・視差・保存）
+ */
+import type { MediaValue } from "emdash";
+import ArtCard from "./ArtCard.astro";
+import CodeCard from "./CodeCard.astro";
+import FabMenu from "./FabMenu.astro";
+
+type Common = {
+	dbId: string;
+	href: string;
+	title: string;
+	summary?: string;
+	note?: string;
+	sticker?: string;
+	tilt?: number;
+	boardX?: number;
+	boardY?: number;
+	edit?: import("emdash").EditProxy;
+};
+
+export type BoardPiece =
+	| (Common & {
+			kind: "art";
+			featuredImage: MediaValue;
+			backImage?: MediaValue;
+			client?: string;
+			year?: string;
+			frame?: string;
+	  })
+	| (Common & {
+			kind: "code";
+			language: string;
+			code: string;
+			runnable?: boolean;
+	  });
+
+interface Props {
+	pieces: BoardPiece[];
+	label: string;
+	/** 管理者のとき、FAB に「この並べ方を公開する」を出す */
+	isAdmin?: boolean;
+}
+
+const { pieces, label, isAdmin = false } = Astro.props;
+---
+
+<div class="board-wrap">
+	<p class="board-hint hand" data-board-hint hidden>
+		ドラッグで動かせます（位置はこの端末に保存されます。管理者は FAB から公開できます）
+	</p>
+	<ol class="board" data-board data-pending aria-label={label}>
+		{
+			pieces.map((piece, i) => (
+				<li
+					class:list={["board-piece", `board-piece--${piece.kind}`]}
+					data-piece-id={piece.dbId}
+					data-collection={piece.kind === "art" ? "projects" : "snippets"}
+					data-x={piece.boardX}
+					data-y={piece.boardY}
+					style={`--i: ${i}`}
+				>
+					{piece.kind === "art" ? (
+						<ArtCard
+							dbId={piece.dbId}
+							title={piece.title}
+							summary={piece.summary}
+							featuredImage={piece.featuredImage}
+							backImage={piece.backImage}
+							href={piece.href}
+							client={piece.client}
+							year={piece.year}
+							note={piece.note}
+							sticker={piece.sticker}
+							frame={piece.frame}
+							tilt={piece.tilt}
+							edit={piece.edit}
+							headingLevel="h3"
+						/>
+					) : (
+						<CodeCard
+							dbId={piece.dbId}
+							title={piece.title}
+							href={piece.href}
+							language={piece.language}
+							code={piece.code}
+							runnable={piece.runnable}
+							summary={piece.summary}
+							note={piece.note}
+							sticker={piece.sticker}
+							tilt={piece.tilt}
+							edit={piece.edit}
+							headingLevel="h3"
+						/>
+					)}
+				</li>
+			))
+		}
+	</ol>
+</div>
+<!-- perspective の中に position: fixed を置くと固定にならないので、机（.board-wrap）の外に置く -->
+<FabMenu isAdmin={isAdmin} />
+
+<script>
+	import { initBoard } from "../scripts/board";
+
+	initBoard();
+</script>
+
+<style>
+	.board-wrap {
+		position: relative;
+	}
+
+	.board-hint {
+		margin-bottom: var(--spacing-lg);
+		font-size: var(--font-size-lg);
+		color: var(--color-muted);
+		text-align: right;
+	}
+
+	/* ふつうの並べ方（せまい画面・整頓モード・JS なし） */
+	.board {
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+		gap: var(--spacing-3xl) var(--spacing-2xl);
+	}
+
+	/* JS が並べ終わるまで隠す（跳ねて見えないように）。JS がなければ html.js が付かず、格子で見える */
+	:global(html.js) .board[data-pending] {
+		visibility: hidden;
+	}
+
+	/*
+	  自由配置：left / top は 0 に固定して、位置は JS が translate で置く。
+	  z 方向の持ち上げは transform（translateZ）で、位置の translate とは別に動かす。
+	*/
+	.board.is-free {
+		display: block;
+		position: relative;
+		height: var(--board-h, 1200px);
+	}
+
+	.board.is-free .board-piece {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 270px;
+		cursor: grab;
+		touch-action: auto;
+		transition:
+			scale var(--spring),
+			transform var(--spring);
+	}
+
+	.board.is-free .board-piece--code {
+		width: 330px;
+	}
+
+	/* 影用の要素：opacity と transform だけを動かす（box-shadow 自体は動かさない） */
+	.board.is-free .board-piece::before {
+		content: "";
+		position: absolute;
+		inset: 6% 4%;
+		z-index: -1;
+		box-shadow: var(--shadow-desk);
+		opacity: 0;
+		transform: translate(0, 0) scale(0.98);
+		transition:
+			opacity var(--fade-fast),
+			transform var(--spring);
+		pointer-events: none;
+	}
+
+	/* シャッフルなどで、ばねで位置を動かす（少しずつ時間をずらす） */
+	.board.is-animating .board-piece {
+		will-change: translate;
+		transition:
+			translate var(--spring-slow) calc(var(--i) * 25ms),
+			scale var(--spring),
+			transform var(--spring);
+	}
+
+	/* ドラッグ中：持ち上げる。位置はポインターに合わせて直接動かし、離すとばねで戻る */
+	.board.is-free .board-piece.is-dragging {
+		cursor: grabbing;
+		scale: 1.06;
+		will-change: translate, transform;
+		transition:
+			scale var(--spring),
+			transform var(--spring);
+	}
+
+	.board.is-free .board-piece.is-dragging::before {
+		opacity: 1;
+		transform: translate(10px, 18px) scale(1.03);
+	}
+
+	.board.is-free .board-piece.is-dragging :global(.art-card),
+	.board.is-free .board-piece.is-dragging :global(.code-card) {
+		rotate: 0deg;
+	}
+
+	.board.is-free .board-piece:focus-within {
+		z-index: 1000;
+	}
+
+	/*
+	  3D の机（desk-3d）：自由配置で、動きを減らす設定でなく、細かく指せる入力のときだけ。
+	  整頓モードは JS が .is-3d を外し、--wobble も 0 になるので平らになる。
+	  角度には --wobble を掛ける。
+	*/
+	@media (min-width: 761px) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		.board-wrap.is-3d {
+			perspective: var(--desk-perspective);
+		}
+
+		.board.is-free.is-3d {
+			transform-style: preserve-3d;
+			transform: rotateX(calc(var(--rx) * var(--desk-tilt) * var(--wobble)))
+				rotateY(calc(var(--ry) * var(--desk-tilt) * var(--wobble)));
+		}
+
+		/* 傾いている間だけ */
+		.board.is-tilting {
+			will-change: transform;
+		}
+
+		/* 重なり順（--z：0〜12px）だけ浮く。ホバーで 20px、ドラッグ中は 60px */
+		.board.is-3d .board-piece {
+			transform: translateZ(calc(var(--z) + var(--lift)));
+		}
+
+		.board.is-3d .board-piece:hover,
+		.board.is-3d .board-piece:focus-within {
+			--lift: var(--lift-hover);
+			will-change: transform;
+		}
+
+		.board.is-3d .board-piece.is-dragging {
+			--lift: var(--lift-drag);
+		}
+
+		.board.is-3d .board-piece:hover::before,
+		.board.is-3d .board-piece:focus-within::before {
+			opacity: 0.55;
+			transform: translate(4px, 8px) scale(1);
+		}
+
+		.board.is-3d .board-piece.is-dragging::before {
+			opacity: 1;
+			transform: translate(10px, 18px) scale(1.03);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.board {
+			grid-template-columns: minmax(0, 1fr);
+			padding: 0 var(--spacing-sm);
+		}
+	}
+
+	/*
+	  せまい画面（格子に並べるとき）は、画面の外のカードの整形と描画をあとにまわす。
+	  日本語の文字の整形が重く、16 枚ぶんを最初にまとめて解くと長いタスクが約 2 倍になるため。
+	  読み上げ・Tab・ページ内検索はそのまま使える（フォーカスが入ると描かれる）。
+	  高さの目安は、1 度描かれたあと実際の高さを覚える（auto）。
+	*/
+	@media (max-width: 760px) {
+		/* overflow-clip-margin に対応していないブラウザ（Safari）では付けない（テープ・ステッカーが欠けるため） */
+		@supports (overflow-clip-margin: 1px) {
+			.board:not(.is-free) .board-piece {
+				content-visibility: auto;
+				contain-intrinsic-size: auto 420px;
+				/* 描画の切り取り（paint containment）から、はみ出すテープ・ステッカー・影を守る */
+				overflow-clip-margin: 48px;
+			}
+		}
+	}
+</style>

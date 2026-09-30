@@ -1,0 +1,227 @@
+---
+export const prerender = false;
+
+import { Effect } from "effect";
+import { loadCollection, loadTaxonomyTerms, loadTermsForEntries, runPage } from "../../lib/content";
+import Base from "../../layouts/Base.astro";
+import CodeCard from "../../components/CodeCard.astro";
+import HandTitle from "../../components/HandTitle.astro";
+
+// タグの絞り込みは DB 側（where）で行う。全部読んでから JS で絞ると、件数が増えたときに重くなるため
+const activeTag = Astro.url.searchParams.get("tag");
+const cursor = Astro.url.searchParams.get("cursor") ?? undefined;
+
+// コードの一覧とタグは並行に読む。カードのタグは、コードが決まってから 1 回の JOIN でまとめて読む
+const loaded = await runPage(
+	Effect.gen(function* () {
+		const { snippetsResult, tagsResult } = yield* Effect.all(
+			{
+				snippetsResult: loadCollection("snippets", {
+					orderBy: { published_at: "desc" },
+					limit: 12,
+					cursor,
+					...(activeTag ? { where: { tag: activeTag } } : {}),
+				}),
+				tagsResult: loadTaxonomyTerms("tag", { includeCounts: false }),
+			},
+			{ concurrency: "unbounded" },
+		);
+		const tagsByEntry = yield* loadTermsForEntries(
+			"snippets",
+			snippetsResult.entries.map((s) => s.data.id),
+			"tag",
+		);
+		return { snippetsResult, tagsResult, tagsByEntry };
+	}),
+	"Could not load the code",
+);
+if (loaded instanceof Response) return loaded;
+const { snippetsResult, tagsResult, tagsByEntry } = loaded;
+
+const { entries: sortedSnippets, nextCursor } = snippetsResult;
+const tags = tagsResult.data;
+if (Astro.cache?.enabled) {
+	Astro.cache.set(snippetsResult.cacheHint);
+	Astro.cache.set(tagsResult.cacheHint);
+}
+
+const snippetsWithTags = sortedSnippets.map((snippet) => ({
+	snippet,
+	snippetTags: tagsByEntry.get(snippet.data.id) ?? [],
+}));
+
+function codeUrl(next: string): string {
+	const params = new URLSearchParams({ cursor: next });
+	if (activeTag) params.set("tag", activeTag);
+	return `/code?${params.toString()}`;
+}
+---
+
+<Base
+	title={activeTag
+		? `${tags.find((t) => t.slug === activeTag)?.label || activeTag} — コード`
+		: "コード"}
+>
+	<section class="code-header">
+		<HandTitle text="CODE" size="lg" />
+		<p class="code-intro hand">好きなコード、書いたコード。動くものは動かして見られます。</p>
+
+		{
+			tags.length > 0 && (
+				<nav class="tag-filters" aria-label="タグで絞り込む">
+					<a
+						href="/code"
+						class:list={["tag-filter", { active: !activeTag }]}
+						aria-current={!activeTag ? "page" : undefined}
+					>
+						ぜんぶ
+					</a>
+					{tags.map((tag, i) => (
+						<a
+							href={`/code?tag=${tag.slug}`}
+							class:list={["tag-filter", { active: activeTag === tag.slug }]}
+							aria-current={activeTag === tag.slug ? "page" : undefined}
+							style={`--r: ${(i % 3) * 2 - 2}deg`}
+						>
+							#{tag.label}
+						</a>
+					))}
+				</nav>
+			)
+		}
+	</section>
+
+	{
+		snippetsWithTags.length > 0 ? (
+			<section class="projects" aria-label="コードの一覧">
+				<div class="projects-grid">
+					{snippetsWithTags.map(({ snippet, snippetTags }) => (
+						<CodeCard
+							dbId={snippet.data.id}
+							title={snippet.data.title}
+							href={`/code/${snippet.id}`}
+							language={snippet.data.language}
+							code={snippet.data.code}
+							runnable={snippet.data.runnable}
+							summary={snippet.data.summary}
+							note={snippet.data.note}
+							sticker={snippet.data.sticker}
+							tilt={snippet.data.tilt}
+							tags={snippetTags.map((t) => t.label)}
+							edit={snippet.edit}
+						/>
+					))}
+				</div>
+			</section>
+		) : (
+			<section class="empty-state paper tape">
+				{activeTag ? (
+					<>
+						<p>このタグのコードはまだありません。</p>
+						<a href="/code" class="btn-label">
+							ぜんぶ見る
+						</a>
+					</>
+				) : (
+					<>
+						<p>まだコードがありません。管理画面から追加しましょう。</p>
+						<a href="/_emdash/admin/content/snippets/new" class="btn-label">
+							コードを追加する
+						</a>
+					</>
+				)}
+			</section>
+		)
+	}
+
+	{
+		nextCursor && (
+			<nav class="pagination" aria-label="ページ送り">
+				<a href={codeUrl(nextCursor)} rel="next" class="btn-label">
+					次のページをめくる →
+				</a>
+			</nav>
+		)
+	}
+</Base>
+
+<style>
+	.code-header {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-2xl);
+		text-align: center;
+	}
+
+	.code-intro {
+		margin-top: var(--spacing-lg);
+		font-size: var(--font-size-xl);
+		color: var(--color-muted);
+	}
+
+	.tag-filters {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--spacing-sm) var(--spacing-md);
+		margin-top: var(--spacing-xl);
+	}
+
+	/* タグは手描きの枠のシール。選ばれているものは黄色のクレヨンで塗る */
+	.tag-filter {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0 var(--spacing-md);
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+		color: var(--color-text);
+		text-decoration: none;
+		background: var(--color-surface);
+		border: 2px solid var(--color-text);
+		border-radius: var(--hand-radius);
+		rotate: calc(var(--r, 0deg) * var(--wobble));
+		transition:
+			rotate var(--spring-fast),
+			scale var(--spring-fast);
+	}
+
+	.tag-filter:hover {
+		rotate: 0deg;
+		scale: 1.05;
+	}
+
+	.tag-filter.active {
+		color: var(--crayon-ink);
+		background: var(--crayon-yellow);
+	}
+
+	.projects {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	.projects-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+		gap: var(--spacing-3xl) var(--spacing-2xl);
+	}
+
+	.empty-state {
+		max-width: 480px;
+		margin: 0 auto var(--spacing-4xl);
+		text-align: center;
+	}
+
+	.empty-state p {
+		margin-bottom: var(--spacing-lg);
+	}
+
+	.pagination {
+		max-width: var(--wide-width);
+		margin: var(--spacing-xl) auto;
+		padding: 0 var(--spacing-lg);
+		text-align: center;
+	}
+</style>

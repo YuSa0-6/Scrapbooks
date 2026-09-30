@@ -1,0 +1,21 @@
+/** ステッカーの形と色の選択肢。管理画面と表示の両方で使う */
+
+export const stickerShapes = [
+	{ value: "cookie", label: "クッキー（ふちが波打つ丸）" },
+	{ value: "sunny", label: "おひさま（ギザギザ）" },
+	{ value: "flower", label: "お花" },
+	{ value: "circle", label: "丸シール" },
+	{ value: "bubble", label: "吹き出し" },
+	{ value: "label", label: "ラベルテープ" },
+] as const;
+
+export const stickerColors = [
+	{ value: "yellow", label: "きいろ", css: "var(--crayon-yellow)" },
+	{ value: "pink", label: "ピンク", css: "var(--crayon-pink)" },
+	{ value: "cyan", label: "みずいろ", css: "var(--crayon-blue)" },
+	{ value: "green", label: "みどり", css: "var(--crayon-sage)" },
+	{ value: "purple", label: "むらさき", css: "var(--crayon-lilac)" },
+] as const;
+
+export type StickerShape = (typeof stickerShapes)[number]["value"];
+export type StickerColor = (typeof stickerColors)[number]["value"];

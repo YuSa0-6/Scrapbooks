@@ -1,0 +1,379 @@
+---
+/**
+ * 絵のカード。裏返せる（表＝写真とタイトル、裏＝写真の裏に書いたメモ）。
+ * - frame が polaroid（または空）：白いふちの写真。留め方は id で決まる（写真コーナー か マスキングテープ）
+ * - それ以外：M3E の形に切り抜いた絵。ふちは白い層と、細い手描きの線の層（形は変形させない）
+ * - 裏：罫線の紙に手書きのメモ。back_image があれば 2 枚目の絵を大きく出す
+ * カード全体を 1 つのリンクにする：タイトルの <a> を ::after で広げる。
+ * 裏返すボタンはリンクの外に置く（FlipCard）。
+ */
+import type { EditProxy, MediaValue } from "emdash";
+import { Image } from "emdash/ui";
+import FlipCard from "./FlipCard.astro";
+import { isShapeName } from "../lib/shapes";
+import { mountFor, stickerColor, tapeColor, tiltFor, transitionName } from "../lib/pieces";
+
+interface Props {
+	dbId: string;
+	title: string;
+	summary?: string;
+	featuredImage: MediaValue;
+	/** 裏返したときに大きく出す 2 枚目の絵（任意） */
+	backImage?: MediaValue;
+	href: string;
+	client?: string;
+	year?: string;
+	note?: string;
+	sticker?: string;
+	frame?: string;
+	tilt?: number;
+	tags?: string[];
+	edit?: EditProxy;
+	headingLevel?: "h2" | "h3";
+}
+
+const {
+	dbId,
+	title,
+	summary,
+	featuredImage,
+	backImage,
+	href,
+	client,
+	year,
+	note,
+	sticker,
+	frame,
+	tilt,
+	tags,
+	edit,
+	headingLevel: Heading = "h2",
+} = Astro.props;
+const allTags = tags || [];
+const shaped = frame && frame !== "polaroid" && isShapeName(frame) ? frame : null;
+// 写真の留め方（写真コーナー か マスキングテープ）。形に切り抜いた絵は留めない
+const mount = shaped ? null : mountFor(dbId);
+
+const cardStyle = [
+	`--tilt: ${tiltFor(dbId, tilt)}deg`,
+	`--tape-color: ${tapeColor(dbId)}`,
+	`--tape-rot: ${(dbId.length % 2 === 0 ? -5 : 4)}deg`,
+	`--sticker-bg: ${stickerColor(dbId)}`,
+	shaped ? `--shape-from: var(--shape-${shaped})` : "",
+].join("; ");
+---
+
+
+<article
+	class:list={["art-card", shaped ? "art-card--shaped" : "art-card--polaroid", { tape: mount === "tape" }]}
+	style={cardStyle}
+>
+	<FlipCard label={title}>
+		<div slot="front" class:list={["flip-sheet", "art-front", { "flip-sheet--bare": shaped }]}>
+			<div
+				class:list={["card-photo", { "photo-corners": mount === "corners" }]}
+				style={`view-transition-name: ${transitionName("art", dbId)}`}
+				{...edit?.featured_image}
+			>
+				{
+					shaped ? (
+						<div class="die">
+							<span class="die-shadow" aria-hidden="true" />
+							<span class="die-line" aria-hidden="true" />
+							<span class="die-edge" aria-hidden="true" />
+							<div class="photo-shape">
+								<Image image={featuredImage} />
+							</div>
+						</div>
+					) : (
+						<Image image={featuredImage} />
+					)
+				}
+			</div>
+			<div class="card-body">
+				<Heading class="card-title" {...edit?.title}>
+					<a href={href} class="card-link">{title}</a>
+				</Heading>
+				{
+					client && (
+						<p class="card-meta" {...edit?.client}>
+							{client}
+						</p>
+					)
+				}
+			</div>
+		</div>
+		<div slot="back" class:list={["flip-sheet", "art-back", { "art-back--photo": backImage }]}>
+			{
+				backImage ? (
+					<div class="back-photo" {...edit?.back_image}>
+						<Image image={backImage} />
+					</div>
+				) : (
+					<p class="back-title hand" aria-hidden="true">
+						— うら —
+					</p>
+				)
+			}
+			{
+				note && (
+					<p class="card-note hand" {...edit?.note}>
+						{note}
+					</p>
+				)
+			}
+			{
+				summary && (
+					<p class="card-summary" {...edit?.summary}>
+						{summary}
+					</p>
+				)
+			}
+			{
+				year && (
+					<p class="card-meta" {...edit?.year}>
+						{year}
+					</p>
+				)
+			}
+			{
+				allTags.length > 0 && (
+					<ul class="card-tags" aria-label="タグ">
+						{allTags.map((tag) => (
+							<li>#{tag}</li>
+						))}
+					</ul>
+				)
+			}
+			<a href={href} class="btn-label back-more" aria-label={`${title}を詳しく見る`}>
+				詳しく見る
+			</a>
+		</div>
+	</FlipCard>
+	{
+		sticker && (
+			<span class="sticker card-sticker" aria-hidden="true" {...edit?.sticker}>
+				{sticker}
+			</span>
+		)
+	}
+</article>
+
+<style>
+	.art-card {
+		position: relative;
+		rotate: calc(var(--tilt) * var(--wobble));
+		transition:
+			rotate var(--spring),
+			translate var(--spring),
+			scale var(--spring);
+	}
+
+	.art-card:hover,
+	.art-card:focus-within {
+		rotate: 0deg;
+		translate: 0 -6px;
+		scale: 1.03;
+		z-index: 5;
+	}
+
+	/* カード全体のリンク：タイトルの <a> を ::after で面いっぱいに広げる */
+	.card-link {
+		color: var(--color-text);
+		text-decoration: none;
+	}
+
+	.card-link::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+	}
+
+	.card-link:focus-visible {
+		outline: none;
+	}
+
+	.card-link:focus-visible::after {
+		outline: 3px dashed var(--color-accent);
+		outline-offset: 6px;
+	}
+
+	/* 白いふちの写真（ポラロイド）。テープか写真コーナーで留める */
+	.art-card--polaroid .art-front {
+		padding: 12px 12px 0;
+	}
+
+	.card-photo {
+		background: color-mix(in srgb, var(--color-text) 12%, transparent);
+	}
+
+	.card-photo :global(img) {
+		width: 100%;
+		aspect-ratio: 4 / 3;
+		object-fit: cover;
+	}
+
+	/*
+	  形に切り抜いた絵：同じ形の層を重ねる（filter: drop-shadow は使わない）。
+	  影（ずらした半透明）→ 手描きの線（少し大きく、わずかに傾ける）→ ふち（線より少し内側）→ 写真。
+	  線の層を傾けるので、ふちとの間が均一にならず、手で引いた線に見える。写真の形は変形させない。
+	*/
+	.art-card--shaped .card-photo {
+		display: grid;
+		flex: 1;
+		align-content: center;
+		padding: 16px;
+		background: none;
+	}
+
+	.die {
+		position: relative;
+	}
+
+	.die-shadow,
+	.die-line,
+	.die-edge {
+		position: absolute;
+		inset: 0;
+		clip-path: var(--shape-from);
+		scale: 1.08;
+		pointer-events: none;
+	}
+
+	.die-shadow {
+		background: var(--shadow-tear);
+		translate: 3px 6px;
+	}
+
+	.die-line {
+		inset: -3px;
+		background: var(--color-text);
+		rotate: calc(-1.5deg * var(--wobble));
+	}
+
+	.die-edge {
+		background: var(--color-surface);
+	}
+
+	.photo-shape {
+		position: relative;
+		clip-path: var(--shape-from);
+	}
+
+	.photo-shape :global(img) {
+		aspect-ratio: 1;
+	}
+
+	.art-card--shaped .card-body {
+		padding: var(--spacing-md) var(--spacing-md) var(--flip-btn-space);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-paper);
+		/* rotate は付けない：変形した要素の中では、リンクの ::after が面いっぱいに広がらないため */
+	}
+
+	.card-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+		padding: var(--spacing-md) var(--spacing-xs) var(--flip-btn-space);
+	}
+
+	/* 題名は Klee One（h2・h3 の書体）。ホバーで赤ペンの色になる */
+	.card-title {
+		font-size: var(--font-size-xl);
+		line-height: 1.3;
+		transition: color var(--fade-fast);
+	}
+
+	.art-card:hover .card-title {
+		color: var(--color-accent);
+	}
+
+	.card-meta {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		font-weight: 700;
+	}
+
+	.card-summary {
+		font-size: var(--font-size-sm);
+		color: var(--color-text);
+	}
+
+	/* 手書きのメモは赤ペン */
+	.card-note {
+		font-size: var(--font-size-lg);
+		color: var(--color-accent);
+		rotate: calc(-1.5deg * var(--wobble));
+	}
+
+	.card-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 var(--spacing-sm);
+		list-style: none;
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		color: var(--color-muted);
+	}
+
+	/*
+	  写真の裏：罫線の紙に、手書きでメモを書いた感じ。
+	  罫線の間隔は 28px。文字の行の高さも 28px にそろえて、文字を罫線の上に乗せる。
+	  上に 1 行ぶんの余白（28px）。左の赤い余白線の右から書き始める。
+	*/
+	.art-card .art-back {
+		--rl: 28px;
+		padding: var(--rl) var(--spacing-md) var(--flip-btn-space) 44px;
+		color: var(--color-text);
+		background-color: var(--color-surface);
+		background-image:
+			linear-gradient(90deg, transparent 30px, var(--rule-margin) 30px 32px, transparent 32px),
+			repeating-linear-gradient(transparent 0 calc(var(--rl) - 1px), var(--rule-line) calc(var(--rl) - 1px) var(--rl));
+	}
+
+	.art-back > :where(.back-title, .card-note, .card-summary, .card-meta, .card-tags) {
+		line-height: var(--rl);
+	}
+
+	.back-title {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	/* 裏の絵：面の幅いっぱいに大きく出す（8 行ぶんの高さ）。余白線の上にも貼る */
+	.back-photo {
+		height: calc(var(--rl) * 8);
+		margin: 0 0 var(--rl) calc(-1 * (44px - var(--spacing-md)));
+		overflow: hidden;
+		background: color-mix(in srgb, var(--color-text) 12%, transparent);
+		border: 2px solid var(--color-text);
+		border-radius: var(--hand-radius-soft);
+	}
+
+	.back-photo :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.back-more {
+		align-self: flex-start;
+		margin-top: auto;
+		--btn-bg: var(--crayon-sage);
+	}
+
+	.card-sticker {
+		position: absolute;
+		top: -14px;
+		right: -14px;
+		z-index: 3;
+		pointer-events: none;
+	}
+
+	.art-card:hover .card-sticker {
+		rotate: calc(-20deg * var(--wobble));
+		scale: 1.15;
+	}
+</style>

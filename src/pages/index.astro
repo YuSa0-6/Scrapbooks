@@ -1,0 +1,314 @@
+---
+import { hasPermission } from "@emdash-cms/auth";
+import { Effect } from "effect";
+import { loadCollection, loadSiteSettings, runPage } from "../lib/content";
+import Base from "../layouts/Base.astro";
+import Board, { type BoardPiece } from "../components/Board.astro";
+import HandTitle from "../components/HandTitle.astro";
+
+// 設定と、絵・コードの新しいものを並行して取る。件数と並び順は DB 側で決める
+const loaded = await runPage(
+	Effect.all(
+		{
+			settingsResult: loadSiteSettings(),
+			artResult: loadCollection("projects", { orderBy: { published_at: "desc" }, limit: 10 }),
+			codeResult: loadCollection("snippets", { orderBy: { published_at: "desc" }, limit: 10 }),
+		},
+		{ concurrency: "unbounded" },
+	),
+	"Could not load the scrapbook",
+);
+if (loaded instanceof Response) return loaded;
+
+// 公開ボタンは、並べ方の保存ルートと同じ権限（content:publish_any＝編集者以上）の人にだけ出す
+const canPublish = hasPermission(Astro.locals.user, "content:publish_any");
+const { settingsResult, artResult, codeResult } = loaded;
+const settings = settingsResult.data;
+if (Astro.cache?.enabled) {
+	Astro.cache.set(settingsResult.cacheHint);
+	Astro.cache.set(artResult.cacheHint);
+	Astro.cache.set(codeResult.cacheHint);
+}
+
+const arts: (BoardPiece & { at: number })[] = artResult.entries.map((entry) => ({
+	kind: "art",
+	at: entry.data.publishedAt?.getTime() ?? 0,
+	dbId: entry.data.id,
+	href: `/work/${entry.id}`,
+	title: entry.data.title,
+	summary: entry.data.summary,
+	note: entry.data.note,
+	sticker: entry.data.sticker,
+	tilt: entry.data.tilt,
+	boardX: entry.data.board_x,
+	boardY: entry.data.board_y,
+	edit: entry.edit,
+	featuredImage: entry.data.featured_image,
+	backImage: entry.data.back_image,
+	client: entry.data.client,
+	year: entry.data.year,
+	frame: entry.data.frame,
+}));
+const codes: (BoardPiece & { at: number })[] = codeResult.entries.map((entry) => ({
+	kind: "code",
+	at: entry.data.publishedAt?.getTime() ?? 0,
+	dbId: entry.data.id,
+	href: `/code/${entry.id}`,
+	title: entry.data.title,
+	summary: entry.data.summary,
+	note: entry.data.note,
+	sticker: entry.data.sticker,
+	tilt: entry.data.tilt,
+	boardX: entry.data.board_x,
+	boardY: entry.data.board_y,
+	edit: entry.edit,
+	language: entry.data.language,
+	code: entry.data.code,
+	runnable: entry.data.runnable,
+}));
+
+// 絵とコードを交互に混ぜる（それぞれの中では新しい順）
+const pieces: BoardPiece[] = [];
+for (let i = 0; i < Math.max(arts.length, codes.length); i++) {
+	if (arts[i]) pieces.push(arts[i]!);
+	if (codes[i]) pieces.push(codes[i]!);
+}
+
+const siteTitle = settings?.title || "Scrapbook";
+const tagline = settings?.tagline || "絵とコードの切り抜き帳";
+---
+
+<Base>
+	<section class="hero">
+		<span class="sticker hero-sticker hero-sticker--1 morph-host" aria-hidden="true">
+			<span class="morph hero-shape"></span>
+			<span class="hero-shape-label">絵</span>
+		</span>
+		<span class="sticker hero-sticker hero-sticker--2 morph-host" aria-hidden="true">
+			<span class="morph hero-shape"></span>
+			<span class="hero-shape-label">{"</>"}</span>
+		</span>
+		<!-- 余白のらくがき（飾り） -->
+		<svg
+			class="doodle doodle--star"
+			width="70"
+			height="70"
+			viewBox="0 0 70 70"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.4"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			aria-hidden="true"
+		>
+			<path d="M35 6l7 19 20 1-16 12 6 20-17-12-17 12 6-20L8 26l20-1z"></path>
+		</svg>
+		<svg
+			class="doodle doodle--swirl"
+			width="110"
+			height="60"
+			viewBox="0 0 110 60"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.4"
+			stroke-linecap="round"
+			aria-hidden="true"
+		>
+			<path d="M6 40c20-30 40-30 46-10s-22 22-18 0 40-26 70-10"></path>
+			<path d="M92 14l12 6-8 10"></path>
+		</svg>
+		<svg
+			class="doodle doodle--heart"
+			width="48"
+			height="44"
+			viewBox="0 0 48 44"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.4"
+			stroke-linecap="round"
+			aria-hidden="true"
+		>
+			<path d="M24 38C4 26 2 12 12 8c6-2 10 2 12 7 2-5 6-9 12-7 10 4 8 18-12 30z"></path>
+		</svg>
+		<HandTitle text={siteTitle} />
+		<p class="hero-tagline hand">{tagline}</p>
+		<div class="hero-actions">
+			<a href="/work" class="btn-label">絵を見る →</a>
+			<a href="/code" class="btn-label btn-label--alt" style="--btn-bg: var(--crayon-blue); --btn-rot: 2deg">
+				コードを見る →
+			</a>
+		</div>
+	</section>
+
+	{
+		pieces.length > 0 ? (
+			<section class="featured" aria-labelledby="board-title">
+				<header class="section-header">
+					<h2 id="board-title" class="label-tape">
+						ボード
+					</h2>
+				</header>
+				<Board pieces={pieces} label="絵とコードの切り抜き" isAdmin={canPublish} />
+			</section>
+		) : (
+			<section class="empty-state paper tape">
+				<h2>まだ何も貼られていません</h2>
+				<p>管理画面から、最初の絵かコードを追加しましょう。</p>
+				<a href="/_emdash/admin/content/projects/new" class="btn-label">
+					絵を追加する
+				</a>
+			</section>
+		)
+	}
+</Base>
+
+<style>
+	.hero {
+		position: relative;
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-2xl);
+		text-align: center;
+	}
+
+	.hero-tagline {
+		margin-top: var(--spacing-xl);
+		font-size: clamp(1.25rem, 3vw, 1.5rem);
+	}
+
+	/* 余白のらくがき（赤ペン・青ペン・ピンクのペン）。位置だけ決めて、動かさない */
+	.doodle {
+		position: absolute;
+		pointer-events: none;
+	}
+
+	.doodle--star {
+		top: 4.5rem;
+		left: 24%;
+		color: var(--color-accent);
+		rotate: calc(-14deg * var(--wobble));
+	}
+
+	.doodle--swirl {
+		bottom: 3.5rem;
+		left: 12%;
+		color: color-mix(in srgb, #5b6fa8 55%, var(--color-text));
+	}
+
+	.doodle--heart {
+		top: 5rem;
+		right: 22%;
+		color: color-mix(in srgb, #b5566d 60%, var(--color-text));
+		rotate: calc(10deg * var(--wobble));
+	}
+
+	.hero-actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--spacing-md);
+		margin-top: var(--spacing-xl);
+	}
+
+	/* 形が変わるステッカー（ホバーでモーフ） */
+	.hero-sticker {
+		position: absolute;
+		width: 6rem;
+		height: 6rem;
+		background: none;
+		border: 0;
+		box-shadow: none;
+		pointer-events: auto;
+	}
+
+	.hero-shape {
+		position: absolute;
+		inset: 0;
+		background: var(--sticker-bg);
+	}
+
+	.hero-shape-label {
+		position: relative;
+		font-family: var(--font-heading);
+		font-size: 1.6rem;
+		color: var(--crayon-ink);
+	}
+
+	.hero-sticker--1 {
+		top: var(--spacing-2xl);
+		left: 8%;
+		--sticker-bg: var(--crayon-yellow);
+		--shape-from: var(--shape-cookie);
+		--shape-to: var(--shape-flower);
+	}
+
+	.hero-sticker--2 {
+		bottom: var(--spacing-2xl);
+		right: 8%;
+		--sticker-bg: var(--crayon-sage);
+		--shape-from: var(--shape-clover);
+		--shape-to: var(--shape-sunny);
+		rotate: calc(-18deg * var(--wobble));
+	}
+
+	.hero-sticker--2 .hero-shape-label {
+		font-family: var(--font-mono);
+		font-weight: 700;
+		font-size: 1.3rem;
+	}
+
+	.featured {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: 0 var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--spacing-lg);
+	}
+
+	.empty-state {
+		max-width: 480px;
+		margin: 0 auto var(--spacing-4xl);
+		text-align: center;
+	}
+
+	.empty-state h2 {
+		font-size: var(--font-size-xl);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.empty-state p {
+		color: var(--color-muted);
+		margin-bottom: var(--spacing-lg);
+	}
+
+	@media (max-width: 600px) {
+		.doodle {
+			display: none;
+		}
+
+		.hero-sticker {
+			width: 3.5rem;
+			height: 3.5rem;
+		}
+
+		.hero-shape-label {
+			font-size: 1rem;
+		}
+
+		.hero-sticker--1 {
+			top: var(--spacing-md);
+			left: 3%;
+		}
+
+		.hero-sticker--2 {
+			top: var(--spacing-md);
+			bottom: auto;
+			right: 3%;
+		}
+	}
+</style>

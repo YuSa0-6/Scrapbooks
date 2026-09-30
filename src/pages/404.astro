@@ -1,0 +1,58 @@
+---
+import Base from "../layouts/Base.astro";
+import HandTitle from "../components/HandTitle.astro";
+---
+
+<Base title="ページが見つかりません">
+	<div class="not-found">
+		<!-- 風で飛ばされていく紙飛行機（飾り） -->
+		<svg class="plane" viewBox="0 0 220 90" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<path d="M8 70c30 6 50-14 74-8s34-10 56-26" stroke-dasharray="2 9" />
+			<path d="M212 14 150 38l16 8zM150 38l40-18M166 46l-4 16 18-14" />
+		</svg>
+		<HandTitle text="404" as="p" />
+		<h1>このページは、どこかへ飛んでいったようです</h1>
+		<p class="hand">風で飛ばされたか、まだ貼っていないページかもしれません。</p>
+		<div class="not-found-links">
+			<a href="/" class="btn-label">表紙にもどる</a>
+			<a href="/work" class="btn-label" style="--btn-bg: var(--crayon-blue); --btn-rot: 2deg">
+				作品を見る
+			</a>
+		</div>
+	</div>
+</Base>
+
+<style>
+	.not-found {
+		text-align: center;
+		padding: var(--spacing-4xl) var(--spacing-lg);
+		max-width: var(--max-width);
+		margin: 0 auto;
+	}
+
+	.plane {
+		display: block;
+		width: 220px;
+		margin: 0 auto var(--spacing-md);
+		color: var(--color-accent);
+		rotate: calc(-4deg * var(--wobble));
+	}
+
+	.not-found h1 {
+		margin-top: var(--spacing-2xl);
+		font-size: var(--font-size-xl);
+	}
+
+	.not-found p.hand {
+		margin: var(--spacing-md) 0 var(--spacing-2xl);
+		font-size: var(--font-size-lg);
+		color: var(--color-muted);
+	}
+
+	.not-found-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-md);
+		justify-content: center;
+	}
+</style>

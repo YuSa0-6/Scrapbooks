@@ -1,0 +1,744 @@
+---
+import { getMenuWithCacheHint, getSiteSettingsWithCacheHint } from "emdash";
+import { EmDashBodyEnd, EmDashBodyStart, EmDashHead } from "emdash/ui";
+import { createPublicPageContext } from "emdash/page";
+import { Font } from "astro:assets";
+import "../styles/tokens.css";
+import "../styles/theme.css";
+import { shapeCssVariables } from "../lib/shapes";
+
+interface Props {
+	title?: string;
+	pageTitle?: string | null;
+	description?: string | null;
+	image?: string | null;
+	canonical?: string | null;
+	robots?: string | null;
+	type?: "website" | "article";
+	content?: { collection: string; id: string; slug?: string | null };
+}
+
+const {
+	title,
+	pageTitle,
+	description,
+	image,
+	canonical,
+	robots,
+	type = "website",
+	content,
+} = Astro.props;
+const [settingsResult, menuResult] = await Promise.all([
+	getSiteSettingsWithCacheHint(),
+	getMenuWithCacheHint("primary"),
+]);
+const settings = settingsResult.data;
+const menu = menuResult.data;
+if (Astro.cache?.enabled) {
+	Astro.cache.set(settingsResult.cacheHint);
+	Astro.cache.set(menuResult.cacheHint);
+}
+
+const siteTitle = settings?.title || "Scrapbook";
+const separator = settings?.seo?.titleSeparator || " — ";
+const fullTitle = !title
+	? siteTitle
+	: title === siteTitle ||
+		  title.endsWith(` — ${siteTitle}`) ||
+		  title.endsWith(` | ${siteTitle}`)
+		? title
+		: `${title}${separator}${siteTitle}`;
+const siteDescription = settings?.tagline || "絵とコードの切り抜き帳";
+// M3E の形（clip-path 用）を CSS 変数として配る
+const shapeStyles = `:root{${shapeCssVariables()}}`;
+const siteLogo = settings?.logo?.url ? settings.logo : null;
+const canonicalUrl =
+	canonical ?? new URL(Astro.url.pathname, Astro.url.origin).href;
+
+const pageCtx = createPublicPageContext({
+	Astro,
+	kind: content ? "content" : "custom",
+	pageType: type,
+	title: fullTitle,
+	pageTitle: pageTitle ?? title ?? siteTitle,
+	description: description || siteDescription,
+	canonical: canonicalUrl,
+	image,
+	content,
+	seo: { ogImage: image, robots },
+	siteName: siteTitle,
+});
+
+const isLoggedIn = Boolean(Astro.locals.user);
+
+// いま開いているページのメニューに印をつける
+const currentPath = Astro.url.pathname;
+function isCurrent(url: string): boolean {
+	if (url === "/") return currentPath === "/";
+	return currentPath === url || currentPath.startsWith(`${url}/`);
+}
+---
+
+<!doctype html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{fullTitle}</title>
+		<EmDashHead page={pageCtx} />
+		<style is:inline set:html={shapeStyles} />
+		<!-- 日本語の Web フォントは Klee One 600 だけ。preload は半角とかなの面だけ -->
+		<Font cssVariable="--font-hand" preload={[{ subset: "latin" }, { subset: "kana" }]} />
+		<link
+			rel="alternate"
+			type="application/rss+xml"
+			title={`${siteTitle} RSS Feed`}
+			href="/rss.xml"
+		/>
+		<script is:inline>
+			// 保存済みのテーマと整頓モードを、描画前に反映してちらつきを防ぐ
+			(function () {
+				// JS が動くことを CSS に伝える（ボードは並べ終わるまで隠す）。
+				// 万一ボードの JS が動かなくても、4 秒たてば格子で見えるようにする
+				document.documentElement.classList.add("js");
+				setTimeout(function () {
+					var b = document.querySelector(".board[data-pending]");
+					if (b) b.removeAttribute("data-pending");
+				}, 4000);
+				var c = document.cookie;
+				var m = c.match(/(?:^|; )theme=([^;]+)/);
+				var theme = m ? m[1] : null;
+				if (theme === "dark" || theme === "light") {
+					document.documentElement.classList.add(theme);
+				}
+				if (/(?:^|; )tidy=1/.test(c)) {
+					document.documentElement.classList.add("tidy");
+				}
+			})();
+		</script>
+	</head>
+	<body>
+		<EmDashBodyStart page={pageCtx} />
+		<a href="#main" class="skip-link">本文へ移動</a>
+		<!-- 上端のリング綴じ（飾り） -->
+		<div class="binding" aria-hidden="true"></div>
+		<header class="site-header">
+			<nav class="nav" aria-label="メインメニュー">
+				<a href="/" class="site-title" aria-current={currentPath === "/" ? "page" : undefined}>
+					{
+						siteLogo ? (
+							<img
+								src={siteLogo.url}
+								alt={siteLogo.alt || siteTitle}
+								class="site-logo-img"
+							/>
+						) : (
+							<>
+								<svg
+									class="site-title-mark"
+									width="28"
+									height="28"
+									viewBox="0 0 32 32"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2.2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									aria-hidden="true"
+								>
+									<path d="M6 25 23 8c1.6-1.6 3.8.6 2.2 2.2L8.3 27.1 4.6 28z" />
+									<path d="M20 11l2.4 2.4" />
+								</svg>
+								{siteTitle}
+							</>
+						)
+					}
+				</a>
+				<ul class="nav-links">
+					{
+						menu?.items.map((item) => {
+							const current = isCurrent(item.url);
+							return (
+								<li>
+									<a
+										href={item.url}
+										target={item.target}
+										rel={
+											item.target === "_blank" ? "noopener noreferrer" : undefined
+										}
+										aria-current={current ? "page" : undefined}
+									>
+										{item.label}
+										{current && (
+											<svg
+												class="nav-circle"
+												viewBox="0 0 64 44"
+												preserveAspectRatio="none"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+												stroke-linecap="round"
+												aria-hidden="true"
+											>
+												<path
+													vector-effect="non-scaling-stroke"
+													d="M10 12c14-9 44-7 48 8 4 14-26 20-44 14C0 29 2 14 22 8"
+												/>
+											</svg>
+										)}
+									</a>
+								</li>
+							);
+						})
+					}
+					{
+						isLoggedIn && (
+							<li>
+								<a href="/_emdash/admin" class="nav-admin">
+									管理画面
+								</a>
+							</li>
+						)
+					}
+				</ul>
+				<button
+					type="button"
+					class="tidy-toggle hand-frame"
+					aria-pressed="false"
+					title="傾きや動きを止めて、読みやすく並べ直します"
+				>
+					<span class="tidy-on" aria-hidden="true">整頓する</span>
+					<span class="tidy-off" aria-hidden="true">整頓中</span>
+					<span class="visually-hidden">整頓モード</span>
+				</button>
+			</nav>
+		</header>
+
+		<main id="main">
+			<slot />
+		</main>
+
+		<footer class="site-footer">
+			<!-- 手で引いた波線（飾り） -->
+			<svg
+				class="footer-line"
+				viewBox="0 0 400 14"
+				preserveAspectRatio="none"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				aria-hidden="true"
+			>
+				<path
+					vector-effect="non-scaling-stroke"
+					d="M2 8c30-6 60 4 96-1s66 5 100 0 66-6 100-1 66 5 100 0"
+				/>
+			</svg>
+			<div class="footer-content">
+				<div class="footer-brand">
+					<span class="footer-logo">
+						{
+							siteLogo ? (
+								<img
+									src={siteLogo.url}
+									alt={siteLogo.alt || siteTitle}
+									class="footer-logo-img"
+								/>
+							) : (
+								siteTitle
+							)
+						}
+					</span>
+					<p class="footer-tagline hand">{siteDescription}</p>
+				</div>
+				<div class="footer-right">
+					<div class="theme-switcher" role="group" aria-label="配色">
+						<button
+							type="button"
+							class="theme-btn hand-frame"
+							data-theme="light"
+							aria-pressed="false"
+						>
+							<svg
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								aria-hidden="true"
+							>
+								<circle cx="12" cy="12" r="4.2"></circle>
+								<path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"></path>
+							</svg>
+							昼
+						</button>
+						<button
+							type="button"
+							class="theme-btn hand-frame hand-frame--alt"
+							data-theme="dark"
+							aria-pressed="false"
+						>
+							<svg
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"></path>
+							</svg>
+							夜
+						</button>
+						<button
+							type="button"
+							class="theme-btn hand-frame"
+							data-theme="system"
+							aria-pressed="false">端末に合わせる</button
+						>
+					</div>
+					<p class="footer-powered">
+						Powered by <a href="https://emdashcms.com">EmDash</a>
+					</p>
+				</div>
+			</div>
+		</footer>
+		<EmDashBodyEnd page={pageCtx} />
+
+		<script>
+			const root = document.documentElement;
+			const secure = location.protocol === "https:" ? "; Secure" : "";
+
+			function readCookie(name: string): string | null {
+				const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]+)`));
+				return match ? match[1] : null;
+			}
+
+			function writeCookie(name: string, value: string | null) {
+				document.cookie =
+					value === null
+						? `${name}=; path=/; max-age=0; SameSite=Lax${secure}`
+						: `${name}=${value}; path=/; max-age=31536000; SameSite=Lax${secure}`;
+			}
+
+			// 配色の切り替え
+			const themeBtns = document.querySelectorAll<HTMLButtonElement>(".theme-btn");
+
+			function setTheme(theme: string) {
+				if (theme !== "light" && theme !== "dark") theme = "system";
+				root.classList.remove("light", "dark");
+				if (theme === "system") {
+					writeCookie("theme", null);
+				} else {
+					writeCookie("theme", theme);
+					root.classList.add(theme);
+				}
+				themeBtns.forEach((btn) => {
+					const active = btn.dataset.theme === theme;
+					btn.classList.toggle("active", active);
+					btn.setAttribute("aria-pressed", String(active));
+				});
+			}
+
+			setTheme(readCookie("theme") ?? "system");
+			themeBtns.forEach((btn) => {
+				btn.addEventListener("click", () => setTheme(btn.dataset.theme || "system"));
+			});
+
+			// 整頓モードの切り替え
+			const tidyBtn = document.querySelector<HTMLButtonElement>(".tidy-toggle");
+
+			function setTidy(on: boolean) {
+				root.classList.toggle("tidy", on);
+				writeCookie("tidy", on ? "1" : null);
+				tidyBtn?.setAttribute("aria-pressed", String(on));
+			}
+
+			setTidy(readCookie("tidy") === "1");
+			tidyBtn?.addEventListener("click", () => setTidy(!root.classList.contains("tidy")));
+		</script>
+
+		<style is:global>
+			/*
+			 * Establish layer order: "base" has lower priority than unlayered
+			 * styles, so theme.css overrides always win regardless of source
+			 * order in the bundled CSS.
+			 */
+			@layer base;
+
+			@layer base {
+				*,
+				*::before,
+				*::after {
+					box-sizing: border-box;
+					margin: 0;
+					padding: 0;
+				}
+
+				:root.light {
+					color-scheme: light;
+				}
+
+				:root.dark {
+					color-scheme: dark;
+				}
+
+				html {
+					scroll-behavior: smooth;
+				}
+
+				body {
+					font-family: var(--font-body);
+					font-size: var(--font-size-base);
+					line-height: var(--leading-normal);
+					color: var(--color-text);
+					-webkit-font-smoothing: antialiased;
+					min-height: 100vh;
+				}
+
+				a {
+					color: currentColor;
+				}
+
+				img {
+					max-width: 100%;
+					height: auto;
+					display: block;
+				}
+
+				h1,
+				h2,
+				h3,
+				h4 {
+					font-family: var(--font-heading);
+					font-weight: var(--font-weight-heading);
+					line-height: var(--leading-snug);
+				}
+
+				h1 {
+					font-size: var(--font-size-4xl);
+				}
+
+				h2 {
+					font-size: var(--font-size-2xl);
+				}
+
+				h3 {
+					font-size: var(--font-size-xl);
+				}
+
+				.visually-hidden {
+					position: absolute;
+					width: 1px;
+					height: 1px;
+					overflow: hidden;
+					clip-path: inset(50%);
+					white-space: nowrap;
+				}
+			}
+		</style>
+
+		<style>
+			.skip-link {
+				position: absolute;
+				top: -100px;
+				left: var(--spacing-md);
+				z-index: 100;
+				padding: var(--spacing-sm) var(--spacing-md);
+				background: var(--crayon-yellow);
+				color: var(--crayon-ink);
+				font-weight: 700;
+			}
+
+			.skip-link:focus {
+				top: var(--spacing-md);
+			}
+
+			/* 上端のリング綴じ：金具と穴を 48px ごとに繰り返す（背景 1 枚。動かさない） */
+			.binding {
+				height: 44px;
+				background:
+					linear-gradient(
+							90deg,
+							transparent 21px,
+							var(--ring-a) 21px,
+							var(--ring-b) 24px,
+							var(--ring-a) 27px,
+							transparent 27px
+						)
+						0 4px / 48px 40px repeat-x,
+					radial-gradient(circle at 50% 100%, var(--ring-hole) 0 6px, transparent 6.5px) 0 0 / 48px 44px repeat-x,
+					var(--color-bg);
+				border-bottom: 1px solid color-mix(in srgb, var(--color-text) 15%, transparent);
+			}
+
+			/* ヘッダー：ページの上に固定。手書きのメニュー */
+			.site-header {
+				position: sticky;
+				top: 0;
+				z-index: 50;
+				background: color-mix(in srgb, var(--color-paper) 94%, transparent);
+				border-bottom: 1px dashed color-mix(in srgb, var(--color-text) 25%, transparent);
+			}
+
+			.nav {
+				max-width: var(--wide-width);
+				margin: 0 auto;
+				padding: var(--spacing-sm) var(--spacing-lg);
+				display: flex;
+				align-items: center;
+				gap: var(--spacing-lg);
+			}
+
+			.site-title {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4em;
+				min-height: 44px;
+				font-family: var(--font-heading);
+				font-weight: var(--font-weight-heading);
+				font-size: 1.5rem;
+				text-decoration: none;
+				white-space: nowrap;
+			}
+
+			.site-title-mark {
+				flex: none;
+				color: var(--color-accent);
+				transition: rotate var(--spring);
+			}
+
+			.site-title:hover .site-title-mark {
+				rotate: calc(-20deg * var(--wobble));
+			}
+
+			.site-logo-img {
+				height: 40px;
+				width: auto;
+			}
+
+			.nav-links {
+				display: flex;
+				flex-wrap: wrap;
+				gap: var(--spacing-xs);
+				margin-left: auto;
+				list-style: none;
+			}
+
+			.nav-links a {
+				position: relative;
+				display: inline-flex;
+				align-items: center;
+				min-height: 44px;
+				padding: 0 var(--spacing-md);
+				font-family: var(--font-body);
+				font-weight: 700;
+				font-size: var(--font-size-base);
+				color: var(--color-text);
+				text-decoration: none;
+				transition: translate var(--spring-fast);
+			}
+
+			.nav-links a:hover {
+				translate: 0 -2px;
+				text-decoration: underline wavy var(--color-accent) 1.5px;
+				text-underline-offset: 6px;
+			}
+
+			/* 今いるページは、赤ペンで手描きの丸をつける（線は文字の外側。押せる範囲は変わらない） */
+			.nav-circle {
+				position: absolute;
+				inset: 0 -6px;
+				width: calc(100% + 12px);
+				height: 100%;
+				color: var(--color-accent);
+				pointer-events: none;
+			}
+
+			.nav-links a:empty {
+				display: none;
+			}
+
+			.tidy-toggle {
+				min-height: 44px;
+				padding: 0 var(--spacing-md);
+				font-family: var(--font-body);
+				font-weight: 700;
+				font-size: var(--font-size-sm);
+				color: var(--color-text);
+				background: transparent;
+				cursor: pointer;
+				white-space: nowrap;
+				transition:
+					translate var(--spring-fast),
+					scale var(--spring-fast);
+			}
+
+			.tidy-toggle:hover {
+				background: var(--color-surface);
+				translate: 0 -1px;
+			}
+
+			.tidy-toggle:active {
+				scale: 0.96;
+			}
+
+			.tidy-off,
+			:global(.tidy) .tidy-on {
+				display: none;
+			}
+
+			:global(.tidy) .tidy-off {
+				display: inline;
+			}
+
+			/* 整頓中は、クレヨンで塗って「押している」ことを見せる */
+			:global(.tidy) .tidy-toggle {
+				color: var(--crayon-ink);
+				background: var(--crayon-blue);
+			}
+
+			main {
+				min-height: calc(100vh - 200px);
+			}
+
+			.site-footer {
+				max-width: var(--wide-width);
+				margin: var(--spacing-3xl) auto 0;
+				padding: 0 var(--spacing-lg) var(--spacing-2xl);
+			}
+
+			.footer-line {
+				display: block;
+				width: 100%;
+				height: 14px;
+				color: var(--color-muted);
+				opacity: 0.6;
+			}
+
+			.footer-content {
+				display: flex;
+				justify-content: space-between;
+				align-items: flex-start;
+				gap: var(--spacing-xl);
+				padding-top: var(--spacing-lg);
+			}
+
+			.footer-logo {
+				font-family: var(--font-heading);
+				font-weight: var(--font-weight-heading);
+				font-size: var(--font-size-xl);
+			}
+
+			.footer-logo-img {
+				height: 24px;
+				width: auto;
+			}
+
+			.footer-tagline {
+				font-size: var(--font-size-lg);
+				color: var(--color-muted);
+				margin-top: var(--spacing-xs);
+			}
+
+			.footer-right {
+				display: flex;
+				flex-direction: column;
+				align-items: flex-end;
+				gap: var(--spacing-md);
+			}
+
+			.theme-switcher {
+				display: flex;
+				flex-wrap: wrap;
+				gap: var(--spacing-sm);
+			}
+
+			.theme-btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4em;
+				min-height: 44px;
+				padding: 0 var(--spacing-md);
+				background: transparent;
+				color: var(--color-text);
+				font-family: var(--font-body);
+				font-weight: 700;
+				font-size: var(--font-size-sm);
+				cursor: pointer;
+				transition:
+					translate var(--spring-fast),
+					scale var(--spring-fast);
+			}
+
+			.theme-btn:hover {
+				background: var(--color-surface);
+				translate: 0 -1px;
+			}
+
+			.theme-btn:active {
+				scale: 0.96;
+			}
+
+			/* 選んでいる配色は、黄色のクレヨンで塗る */
+			.theme-btn.active {
+				color: var(--crayon-ink);
+				background: var(--crayon-yellow);
+			}
+
+			.footer-powered {
+				font-size: var(--font-size-sm);
+				color: var(--color-muted);
+			}
+
+			.footer-powered a {
+				display: inline-flex;
+				align-items: center;
+				min-height: 44px;
+				color: var(--color-text);
+			}
+
+			@media (max-width: 720px) {
+				.nav {
+					flex-wrap: wrap;
+					gap: var(--spacing-sm) var(--spacing-md);
+					padding: var(--spacing-sm) var(--spacing-md);
+				}
+
+				.tidy-toggle {
+					margin-left: auto;
+				}
+
+				/* スマホではメニューを 2 段目に横並び。4 つとも見えるように、余白をつめる（入りきらない幅では折り返す） */
+				.nav-links {
+					order: 3;
+					width: 100%;
+					margin-left: 0;
+					gap: 2px;
+					padding: var(--spacing-xs) 8px var(--spacing-sm);
+				}
+
+				.nav-links a {
+					min-width: 44px;
+					padding: 0 6px;
+					justify-content: center;
+					white-space: nowrap;
+				}
+
+				.footer-content {
+					flex-direction: column;
+				}
+
+				.footer-right {
+					align-items: flex-start;
+				}
+			}
+		</style>
+	</body>
+</html>

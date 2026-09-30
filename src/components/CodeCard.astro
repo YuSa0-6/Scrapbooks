@@ -1,0 +1,355 @@
+---
+/**
+ * コードのカード。罫線ノートの切れ端（左に赤い余白線、下が破れた紙）。裏返せる。
+ * - runnable（動かして見せる）：表は安全な枠（sandbox iframe）で動く様子、裏はコードの抜粋
+ * - それ以外：表はコードの抜粋（色つき）、裏はひとこと説明・言語・タグ
+ * 紙と影は面（.code-sheet）の疑似要素 2 枚：::after が破れた紙（clip-path）、::before が影（opacity だけ動かす）。
+ * iframe は data-srcdoc で持ち、見えている間だけ live-frames.ts が動かす。
+ * カード全体のリンク：タイトルの <a> を ::after で広げる。
+ */
+import type { EditProxy } from "emdash";
+import FlipCard from "./FlipCard.astro";
+import Highlight from "./Highlight.astro";
+import {
+	excerptLines,
+	languageLabel,
+	stickerColor,
+	tapeColor,
+	tiltFor,
+	transitionName,
+} from "../lib/pieces";
+
+interface Props {
+	dbId: string;
+	title: string;
+	href: string;
+	language: string;
+	code: string;
+	runnable?: boolean;
+	summary?: string;
+	note?: string;
+	sticker?: string;
+	tilt?: number;
+	tags?: string[];
+	edit?: EditProxy;
+	headingLevel?: "h2" | "h3";
+}
+
+const {
+	dbId,
+	title,
+	href,
+	language,
+	code,
+	runnable,
+	summary,
+	note,
+	sticker,
+	tilt,
+	tags,
+	edit,
+	headingLevel: Heading = "h2",
+} = Astro.props;
+const allTags = tags || [];
+const live = runnable && language === "html";
+const cardStyle = [
+	`--tilt: ${tiltFor(dbId, tilt)}deg`,
+	`--tape-color: ${tapeColor(dbId)}`,
+	`--tape-rot: ${(dbId.length % 2 === 0 ? 4 : -5)}deg`,
+	`--sticker-bg: ${stickerColor(dbId)}`,
+].join("; ");
+---
+
+<article class="code-card" style={cardStyle}>
+	<FlipCard label={title}>
+		<div slot="front" class="flip-sheet flip-sheet--bare code-sheet">
+			<div class="code-head">
+				<span class="lang-label hand">{languageLabel(language)}</span>
+				{live && <span class="live-badge hand">動く</span>}
+			</div>
+			<div class="code-view code-paper" style={`view-transition-name: ${transitionName("code", dbId)}`}>
+				{
+					live ? (
+						<iframe
+							class="live-frame"
+							title={`${title} の動いている様子`}
+							data-srcdoc={code}
+							sandbox="allow-scripts"
+							tabindex="-1"
+							aria-hidden="true"
+						/>
+					) : (
+						<Highlight code={excerptLines(code, 9)} language={language} />
+					)
+				}
+			</div>
+			<div class="card-body">
+				<Heading class="card-title" {...edit?.title}>
+					<a href={href} class="card-link">{title}</a>
+				</Heading>
+				{
+					note && (
+						<p class="card-note hand" {...edit?.note}>
+							{note}
+						</p>
+					)
+				}
+			</div>
+		</div>
+		<div slot="back" class="flip-sheet flip-sheet--bare code-sheet code-back">
+			<div class="code-head">
+				<span class="lang-label hand">{languageLabel(language)}</span>
+			</div>
+			{
+				live && (
+					<div class="code-view code-view--small code-paper">
+						<Highlight code={excerptLines(code, 6)} language={language} />
+					</div>
+				)
+			}
+			{
+				summary && (
+					<p class="card-summary" {...edit?.summary}>
+						{summary}
+					</p>
+				)
+			}
+			{
+				allTags.length > 0 && (
+					<ul class="card-tags" aria-label="タグ">
+						{allTags.map((tag) => (
+							<li>#{tag}</li>
+						))}
+					</ul>
+				)
+			}
+			<a href={href} class="btn-label back-more" aria-label={`${title}を詳しく見る`}>
+				詳しく見る
+			</a>
+		</div>
+	</FlipCard>
+	{
+		sticker && (
+			<span class="sticker card-sticker" aria-hidden="true" {...edit?.sticker}>
+				{sticker}
+			</span>
+		)
+	}
+</article>
+
+<script>
+	import { initLiveFrames } from "../scripts/live-frames";
+
+	initLiveFrames();
+</script>
+
+<style>
+	.code-card {
+		position: relative;
+		rotate: calc(var(--tilt) * var(--wobble));
+		transition:
+			rotate var(--spring),
+			translate var(--spring),
+			scale var(--spring);
+	}
+
+	.code-card:hover,
+	.code-card:focus-within {
+		rotate: 0deg;
+		translate: 0 -6px;
+		scale: 1.03;
+		z-index: 5;
+	}
+
+	/*
+	  罫線ノートの切れ端（表も裏も）。罫線の間隔は 24px で、文字の行の高さも 24px にそろえる。
+	  紙は ::after（下が破れた形に clip-path）、影は ::before（同じ形をずらした層）。
+	  clip-path は自分の box-shadow を切ってしまうので、影は別の層にして opacity だけ動かす。
+	  上に 1 行ぶんの余白（24px）。左の赤い余白線の右から書き始める。
+	*/
+	.code-sheet {
+		--rl: 24px;
+		padding: var(--rl) var(--spacing-md) var(--flip-btn-space) 44px;
+		color: var(--color-text);
+	}
+
+	.code-sheet::before,
+	.code-sheet::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		clip-path: var(--paper-tear);
+		pointer-events: none;
+	}
+
+	.code-sheet::before {
+		z-index: -2;
+		background: var(--shadow-tear);
+		translate: 3px 6px;
+		opacity: 0.6;
+		transition: opacity var(--fade-fast);
+	}
+
+	.code-sheet::after {
+		z-index: -1;
+		background-color: var(--color-surface);
+		background-image:
+			linear-gradient(90deg, transparent 30px, var(--rule-margin) 30px 32px, transparent 32px),
+			repeating-linear-gradient(transparent 0 calc(var(--rl) - 1px), var(--rule-line) calc(var(--rl) - 1px) var(--rl));
+	}
+
+	.code-card:hover .code-sheet::before,
+	.code-card:focus-within .code-sheet::before {
+		opacity: 1;
+	}
+
+	/* カード全体のリンク：タイトルの <a> を ::after で面いっぱいに広げる */
+	.card-link {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.card-link::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+	}
+
+	.card-link:focus-visible {
+		outline: none;
+	}
+
+	.card-link:focus-visible::after {
+		outline: 3px dashed var(--color-accent);
+		outline-offset: 6px;
+	}
+
+	/* 1 行目：言語名の手書きのラベル（高さ 24px ＝ 罫線 1 行） */
+	.code-head {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		height: var(--rl);
+	}
+
+	.lang-label,
+	.live-badge {
+		display: inline-block;
+		height: var(--rl);
+		padding: 0 var(--spacing-sm);
+		font-size: var(--font-size-xs);
+		line-height: calc(var(--rl) - 4px);
+		color: var(--crayon-ink);
+		border: 2px solid var(--color-text);
+	}
+
+	.lang-label {
+		background: var(--tape-color, var(--crayon-yellow));
+		border-radius: var(--hand-radius-soft-alt);
+	}
+
+	.live-badge {
+		background: var(--crayon-sage);
+		border-radius: var(--hand-round);
+	}
+
+	/* コードは罫線の上に直接書く（枠は付けない）。10 行ぶんの高さまで */
+	.code-view {
+		overflow: hidden;
+		max-height: calc(var(--rl) * 10);
+	}
+
+	.code-view--small {
+		max-height: calc(var(--rl) * 7);
+	}
+
+	.code-view :global(.shiki) {
+		font-size: 0.78rem;
+		line-height: var(--rl);
+		overflow: hidden;
+	}
+
+	/* 動く様子：8 行ぶんの高さ。手描きの枠で囲む */
+	.live-frame {
+		display: block;
+		width: 100%;
+		height: calc(var(--rl) * 8);
+		border: 2px solid var(--color-text);
+		border-radius: var(--hand-radius-soft);
+		pointer-events: none;
+	}
+
+	.card-body {
+		display: flex;
+		flex-direction: column;
+	}
+
+	/* 題名は Klee One。1 行の高さを罫線に合わせる */
+	.card-title {
+		margin-top: var(--rl);
+		font-size: 1.3rem;
+		line-height: var(--rl);
+		transition: color var(--fade-fast);
+	}
+
+	.code-card:hover .card-title {
+		color: var(--color-accent);
+	}
+
+	.card-summary,
+	.card-note,
+	.card-tags {
+		line-height: var(--rl);
+	}
+
+	.card-summary {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	/* 手書きのメモは赤ペン */
+	.card-note {
+		font-size: var(--font-size-base);
+		color: var(--color-accent);
+		rotate: calc(-1.5deg * var(--wobble));
+	}
+
+	.card-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 var(--spacing-sm);
+		list-style: none;
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		color: var(--color-muted);
+	}
+
+	/* 裏：コードの抜粋・ひとこと説明・タグ */
+	.code-back {
+		gap: 0;
+	}
+
+	.code-back .code-view--small {
+		margin-block: var(--rl);
+	}
+
+	.back-more {
+		align-self: flex-start;
+		margin-top: auto;
+		--btn-bg: var(--crayon-sage);
+	}
+
+	.card-sticker {
+		position: absolute;
+		top: -14px;
+		right: -14px;
+		z-index: 3;
+		pointer-events: none;
+	}
+
+	.code-card:hover .card-sticker {
+		rotate: calc(-20deg * var(--wobble));
+		scale: 1.15;
+	}
+</style>

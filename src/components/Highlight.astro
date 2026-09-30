@@ -1,0 +1,14 @@
+---
+/** 色つきのコードを表示する（中身は src/lib/highlight.ts） */
+import { highlight } from "../lib/highlight";
+
+interface Props {
+	code: string;
+	language: string | undefined;
+}
+
+const { code, language } = Astro.props;
+const html = await highlight(code, language);
+---
+
+<Fragment set:html={html} />

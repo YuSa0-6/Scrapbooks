@@ -1,0 +1,232 @@
+---
+export const prerender = false;
+
+import { Effect } from "effect";
+import { loadCollection, loadTaxonomyTerms, loadTermsForEntries, runPage } from "../../lib/content";
+import Base from "../../layouts/Base.astro";
+import ArtCard from "../../components/ArtCard.astro";
+import HandTitle from "../../components/HandTitle.astro";
+
+// Get filter from query param. When set, push the filter down to the
+// database via `where` instead of loading every project and filtering
+// in JS — that pattern scales O(projects × terms-per-project) and
+// blows up the moment you have more than a couple of dozen entries.
+const activeTag = Astro.url.searchParams.get("tag");
+const cursor = Astro.url.searchParams.get("cursor") ?? undefined;
+
+// 絵の一覧とタグは並行に読む。カードのタグは、絵が決まってから 1 回の JOIN でまとめて読む
+const loaded = await runPage(
+	Effect.gen(function* () {
+		const { projectsResult, tagsResult } = yield* Effect.all(
+			{
+				projectsResult: loadCollection("projects", {
+					orderBy: { published_at: "desc" },
+					limit: 12,
+					cursor,
+					...(activeTag ? { where: { tag: activeTag } } : {}),
+				}),
+				tagsResult: loadTaxonomyTerms("tag", { includeCounts: false }),
+			},
+			{ concurrency: "unbounded" },
+		);
+		const tagsByEntry = yield* loadTermsForEntries(
+			"projects",
+			projectsResult.entries.map((p) => p.data.id),
+			"tag",
+		);
+		return { projectsResult, tagsResult, tagsByEntry };
+	}),
+	"Could not load the portfolio",
+);
+if (loaded instanceof Response) return loaded;
+const { projectsResult, tagsResult, tagsByEntry } = loaded;
+
+const { entries: sortedProjects, nextCursor } = projectsResult;
+const tags = tagsResult.data;
+if (Astro.cache?.enabled) {
+	Astro.cache.set(projectsResult.cacheHint);
+	Astro.cache.set(tagsResult.cacheHint);
+}
+
+const projectsWithTags = sortedProjects.map((project) => ({
+	project,
+	projectTags: tagsByEntry.get(project.data.id) ?? [],
+}));
+
+function workUrl(next: string): string {
+	const params = new URLSearchParams({ cursor: next });
+	if (activeTag) params.set("tag", activeTag);
+	return `/work?${params.toString()}`;
+}
+---
+
+<Base
+	title={activeTag
+		? `${tags.find((t) => t.slug === activeTag)?.label || activeTag} — 絵`
+		: "絵"}
+>
+	<section class="work-header">
+		<HandTitle text="ART" size="lg" />
+		<p class="work-intro hand">描いたもの、ぜんぶここに貼ってあります。</p>
+
+		{
+			tags.length > 0 && (
+				<nav class="tag-filters" aria-label="タグで絞り込む">
+					<a
+						href="/work"
+						class:list={["tag-filter", { active: !activeTag }]}
+						aria-current={!activeTag ? "page" : undefined}
+					>
+						ぜんぶ
+					</a>
+					{tags.map((tag, i) => (
+						<a
+							href={`/work?tag=${tag.slug}`}
+							class:list={["tag-filter", { active: activeTag === tag.slug }]}
+							aria-current={activeTag === tag.slug ? "page" : undefined}
+							style={`--r: ${(i % 3) * 2 - 2}deg`}
+						>
+							#{tag.label}
+						</a>
+					))}
+				</nav>
+			)
+		}
+	</section>
+
+	{
+		projectsWithTags.length > 0 ? (
+			<section class="projects" aria-label="絵の一覧">
+				<div class="projects-grid">
+					{projectsWithTags.map(({ project, projectTags }) => (
+						<ArtCard
+							dbId={project.data.id}
+							title={project.data.title}
+							summary={project.data.summary}
+							featuredImage={project.data.featured_image}
+							backImage={project.data.back_image}
+							href={`/work/${project.id}`}
+							client={project.data.client}
+							year={project.data.year}
+							note={project.data.note}
+							sticker={project.data.sticker}
+							frame={project.data.frame}
+							tilt={project.data.tilt}
+							tags={projectTags.map((t) => t.label)}
+							edit={project.edit}
+						/>
+					))}
+				</div>
+			</section>
+		) : (
+			<section class="empty-state paper tape">
+				{activeTag ? (
+					<>
+						<p>このタグの絵はまだありません。</p>
+						<a href="/work" class="btn-label">
+							ぜんぶ見る
+						</a>
+					</>
+				) : (
+					<>
+						<p>まだ絵がありません。管理画面から追加しましょう。</p>
+						<a href="/_emdash/admin/content/projects/new" class="btn-label">
+							絵を追加する
+						</a>
+					</>
+				)}
+			</section>
+		)
+	}
+
+	{
+		nextCursor && (
+			<nav class="pagination" aria-label="ページ送り">
+				<a href={workUrl(nextCursor)} rel="next" class="btn-label">
+					次のページをめくる →
+				</a>
+			</nav>
+		)
+	}
+</Base>
+
+<style>
+	.work-header {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-2xl);
+		text-align: center;
+	}
+
+	.work-intro {
+		margin-top: var(--spacing-lg);
+		font-size: var(--font-size-xl);
+		color: var(--color-muted);
+	}
+
+	.tag-filters {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--spacing-sm) var(--spacing-md);
+		margin-top: var(--spacing-xl);
+	}
+
+	/* タグは手描きの枠のシール。選ばれているものは黄色のクレヨンで塗る */
+	.tag-filter {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0 var(--spacing-md);
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+		color: var(--color-text);
+		text-decoration: none;
+		background: var(--color-surface);
+		border: 2px solid var(--color-text);
+		border-radius: var(--hand-radius);
+		rotate: calc(var(--r, 0deg) * var(--wobble));
+		transition:
+			rotate var(--spring-fast),
+			scale var(--spring-fast);
+	}
+
+	.tag-filter:hover {
+		rotate: 0deg;
+		scale: 1.05;
+	}
+
+	.tag-filter.active {
+		color: var(--crayon-ink);
+		background: var(--crayon-yellow);
+	}
+
+	.projects {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	.projects-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+		gap: var(--spacing-3xl) var(--spacing-2xl);
+	}
+
+	.empty-state {
+		max-width: 480px;
+		margin: 0 auto var(--spacing-4xl);
+		text-align: center;
+	}
+
+	.empty-state p {
+		margin-bottom: var(--spacing-lg);
+	}
+
+	.pagination {
+		max-width: var(--wide-width);
+		margin: var(--spacing-xl) auto;
+		padding: 0 var(--spacing-lg);
+		text-align: center;
+	}
+</style>

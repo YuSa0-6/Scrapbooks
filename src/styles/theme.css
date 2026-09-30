@@ -1,0 +1,592 @@
+/*
+  theme.css -- スケッチブック風テーマ
+
+  方針：「見た目はあたたかい手描き、操作はまじめ」（docs/design/sketchbook-style.md）
+  - クリーム色の画用紙に、手描きの線・水彩のにじみ・マスキングテープ・写真コーナーで貼る
+  - 本文は端末の日本語フォント。日本語の Web フォントは Klee One 600 だけ（見出し・手書きメモ）
+  - 「整頓モード」（html.tidy）と prefers-reduced-motion では傾きと動きを止める
+
+  トークン（色・文字・余白）はこのファイルの :root にまとめる。
+  色トークンは、昼の値を :root に、夜の値を下の 2 か所（端末が夜のとき／「夜」を選んだとき）に書く。
+  custom property の中の light-dark() は、Chromium では「昼／夜」ボタンで切り替えても
+  値が取り直されない（読み込み時の値のまま）ため、トークンには使わない。
+*/
+
+:root {
+	/* 机・画用紙・インク */
+	--color-bg: #efe6d2; /* 机（ページの外） */
+	--color-paper: #f8f2e4; /* 画用紙（ページ） */
+	--color-surface: #fffdf8; /* 貼った紙・写真のふち */
+	--color-text: #3b3128; /* インク（本文） */
+	--color-muted: #6b5b4d; /* 鉛筆（補足） */
+	--color-accent: #b5543c; /* 赤ペン（手書きメモ・現在地の丸） */
+
+	/* 水彩のにじみ（ページの背景に敷く） */
+	--wash-lilac: rgb(201 182 228 / 0.35);
+	--wash-peach: rgb(242 168 138 / 0.28);
+	--wash-sage: rgb(169 191 154 / 0.22);
+
+	/* クレヨン（ボタン・テープ・シール）。上に乗る文字は --crayon-ink（昼も夜も同じ） */
+	--crayon-yellow: #f4d58d;
+	--crayon-blue: #cfe0f3;
+	--crayon-pink: #eeb4b4;
+	--crayon-sage: #cfe0c3;
+	--crayon-peach: #f5c9b0;
+	--crayon-lilac: #ddd0ef;
+	--crayon-ink: #3b3128;
+
+	/* 蛍光ペンの線（文字の下に敷く）。夜は文字が明るいので、うすく透かす */
+	--hl-yellow: #f4d58d;
+	--hl-blue: #cfe0f3;
+	--hl-pink: #eeb4b4;
+	--hl-sage: #cfe0c3;
+	--hl-line: #e9a23b; /* 見出しの下の蛍光ペンの太い線 */
+
+	/* 紙の質感・罫線・線 */
+	--paper-grain: rgb(59 49 40 / 0.018);
+	--rule-line: rgb(91 111 168 / 0.22); /* 罫線ノートの青い線 */
+	--rule-margin: rgb(199 125 142 / 0.45); /* 罫線ノートの赤い余白線 */
+	--ring-a: #8a8378; /* リング綴じの金具（ふち） */
+	--ring-b: #d9d4cb; /* リング綴じの金具（ハイライト） */
+	--ring-hole: rgb(59 49 40 / 0.8); /* リングを通す穴 */
+	--color-canvas: #fff; /* iframe の中身の下地。中身が背景を決めないときも読めるように、昼夜とも白 */
+	--color-danger: #b3261e;
+
+	/* テンプレートの tokens.css と EmDash の部品が読む名前。スケッチブックの色へ向けている（サイトの CSS では使わない） */
+	--color-brand: var(--color-accent);
+	--color-on-brand: var(--color-surface);
+	--color-brand-ring: var(--crayon-blue);
+	--color-border: var(--color-text);
+
+	/* 文字：本文は端末の日本語フォント。見出し・手書きは Klee One 600（--font-hand は astro.config.mjs の fonts が作る） */
+	--font-body: system-ui, "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif;
+	--font-heading: var(--font-hand);
+	--font-weight-heading: 600;
+	--font-weight-display: 600;
+	--font-size-base: 1.0625rem;
+	--font-size-4xl: clamp(2.5rem, 7vw, 5rem);
+	--leading-normal: 1.8;
+	--leading-relaxed: 1.9;
+
+	/* 手描きの枠のいびつな角（2 種類。交互に使うと手で描いた感じになる） */
+	--hand-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+	--hand-radius-alt: 15px 255px 15px 225px / 225px 15px 255px 15px;
+	/* 手描きの丸（似顔絵・丸いボタン・シール）。少しゆがんだ丸 */
+	--hand-round: 56% 44% 52% 48% / 47% 55% 45% 53%;
+	--hand-round-alt: 45% 55% 47% 53% / 55% 46% 54% 45%;
+	/* 手描きの小さな枠（写真・iframe・吹き出し・状態の表示）。文章や絵を切りすぎない、ゆるいいびつさ */
+	--hand-radius-soft: 16px 6px 14px 8px / 8px 14px 6px 16px;
+	--hand-radius-soft-alt: 6px 16px 8px 14px / 14px 8px 16px 6px;
+
+	/* 形 */
+	--radius: 2px;
+	--shadow-paper: 1px 2px 0 rgb(59 49 40 / 0.15), 4px 8px 16px rgb(59 49 40 / 0.1);
+	--shadow-lift: 2px 4px 0 rgb(59 49 40 / 0.18), 10px 20px 30px rgb(59 49 40 / 0.16);
+	--shadow-crayon: 2px 3px 0 rgb(59 49 40 / 0.3); /* クレヨンのボタンの下に敷く、ずらした影（動かさない） */
+	--shadow-tear: rgb(59 49 40 / 0.2); /* 破れた紙・切り抜きの下に敷く影の色（影用の層の background に使う） */
+	/* 下が破れた紙の形（clip-path）。破れは 8px の深さで、紙の高さによらず同じ */
+	--paper-tear: polygon(0 0, 100% 0, 100% calc(100% - 8px), 94% 100%, 88% calc(100% - 8px), 82% 100%, 76% calc(100% - 8px), 70% 100%, 64% calc(100% - 8px), 58% 100%, 52% calc(100% - 8px), 46% 100%, 40% calc(100% - 8px), 34% 100%, 28% calc(100% - 8px), 22% 100%, 16% calc(100% - 8px), 10% 100%, 4% calc(100% - 8px), 0 100%);
+	--wobble: 1; /* 傾きの強さ。整頓モードで 0 になる */
+
+	/* 3D の机（表紙のボード）。角度には --wobble を掛けて使う */
+	--desk-perspective: 1800px;
+	--desk-tilt: 2.5deg; /* ポインターに合わせた傾きの最大 */
+	--lift-hover: 20px; /* ホバーで手前に浮く量 */
+	--lift-drag: 60px; /* ドラッグ中に手前に浮く量 */
+	--shadow-desk: 6px 14px 18px rgb(59 49 40 / 0.32); /* 浮いた紙の影（影用の要素に使う） */
+
+	/* コード用の書体 */
+	--font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+
+	/*
+	  M3E（Material 3 Expressive）のばね。
+	  ばねの式を数値計算して linear() に置き換えたもの（scratch の spring.mjs で生成）。
+	  spatial（位置・大きさ・形）は少し行き過ぎて戻る。effects（色・透明度）は行き過ぎない。
+	*/
+	--m3e-fast-spatial: linear(0, 0.081, 0.259, 0.469, 0.656, 0.825, 0.95, 1.031, 1.074, 1.091, 1.088, 1.074, 1.057, 1.038, 1.021, 1.008, 1, 0.994, 0.992, 0.992, 0.993, 0.994, 0.996, 0.998, 0.999, 1, 1, 1.001, 1);
+	--m3e-fast-spatial-duration: 413ms;
+	--m3e-default-spatial: linear(0, 0.054, 0.166, 0.303, 0.443, 0.572, 0.683, 0.776, 0.849, 0.904, 0.945, 0.973, 0.992, 1.004, 1.01, 1.013, 1.014, 1.013, 1.011, 1.009, 1.008, 1.006, 1.004, 1.003, 1.002, 1.001, 1.001, 1, 1);
+	--m3e-default-spatial-duration: 477ms;
+	--m3e-slow-spatial: linear(0, 0.047, 0.153, 0.279, 0.417, 0.541, 0.655, 0.748, 0.826, 0.884, 0.93, 0.961, 0.984, 0.998, 1.008, 1.012, 1.014, 1.014, 1.013, 1.011, 1.009, 1.007, 1.006, 1.004, 1.003, 1.002, 1.001, 1.001, 1);
+	--m3e-slow-spatial-duration: 631ms;
+	--m3e-fast-effects: linear(0, 0.102, 0.255, 0.412, 0.549, 0.662, 0.749, 0.817, 0.867, 0.904, 0.931, 0.95, 0.964, 0.975, 0.982, 0.987, 0.991, 0.994, 0.995, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1);
+	--m3e-fast-effects-duration: 197ms;
+
+	/* よく使う組み合わせ */
+	--spring-fast: var(--m3e-fast-spatial-duration) var(--m3e-fast-spatial);
+	--spring: var(--m3e-default-spatial-duration) var(--m3e-default-spatial);
+	--spring-slow: var(--m3e-slow-spatial-duration) var(--m3e-slow-spatial);
+	--fade-fast: var(--m3e-fast-effects-duration) var(--m3e-fast-effects);
+}
+
+/*
+  ボードが JS から受け取る値。継承しない型付きの変数にして、
+  値が変わってもカードの中身のスタイル再計算が起きないようにする。
+*/
+@property --rx {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
+
+@property --ry {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
+
+@property --z {
+	syntax: "<length>";
+	inherits: false;
+	initial-value: 0px;
+}
+
+@property --lift {
+	syntax: "<length>";
+	inherits: false;
+	initial-value: 0px;
+}
+
+/* linear() が使えないブラウザでは、ふつうのイージングにする */
+@supports not (transition-timing-function: linear(0, 1)) {
+	:root {
+		--m3e-fast-spatial: cubic-bezier(0.34, 1.56, 0.64, 1);
+		--m3e-default-spatial: cubic-bezier(0.34, 1.3, 0.64, 1);
+		--m3e-slow-spatial: cubic-bezier(0.34, 1.2, 0.64, 1);
+		--m3e-fast-effects: ease-out;
+	}
+}
+
+/* 夜の色（夜のスケッチブック）。値は 2 か所で同じにする（端末が夜で「昼」を選んでいないとき／「夜」を選んだとき） */
+@media (prefers-color-scheme: dark) {
+	:root:not(.light) {
+		--color-bg: #1d1a17;
+		--color-paper: #26221e;
+		--color-surface: #2f2a25;
+		--color-text: #efe6d6;
+		--color-muted: #c9bba8;
+		--color-accent: #f0a58a;
+		--wash-lilac: rgb(201 182 228 / 0.1);
+		--wash-peach: rgb(242 168 138 / 0.08);
+		--wash-sage: rgb(169 191 154 / 0.07);
+		--hl-yellow: rgb(244 213 141 / 0.3);
+		--hl-blue: rgb(207 224 243 / 0.24);
+		--hl-pink: rgb(238 180 180 / 0.28);
+		--hl-sage: rgb(207 224 195 / 0.24);
+		--paper-grain: rgb(239 230 214 / 0.02);
+		--rule-line: rgb(160 178 230 / 0.2);
+		--rule-margin: rgb(214 150 165 / 0.4);
+		--ring-a: #5c574f;
+		--ring-b: #a8a298;
+		--ring-hole: rgb(0 0 0 / 0.7);
+		--shadow-tear: rgb(0 0 0 / 0.4);
+		--color-danger: #f2b8b5;
+	}
+}
+
+:root.dark {
+	--color-bg: #1d1a17;
+	--color-paper: #26221e;
+	--color-surface: #2f2a25;
+	--color-text: #efe6d6;
+	--color-muted: #c9bba8;
+	--color-accent: #f0a58a;
+	--wash-lilac: rgb(201 182 228 / 0.1);
+	--wash-peach: rgb(242 168 138 / 0.08);
+	--wash-sage: rgb(169 191 154 / 0.07);
+	--hl-yellow: rgb(244 213 141 / 0.3);
+	--hl-blue: rgb(207 224 243 / 0.24);
+	--hl-pink: rgb(238 180 180 / 0.28);
+	--hl-sage: rgb(207 224 195 / 0.24);
+	--paper-grain: rgb(239 230 214 / 0.02);
+	--rule-line: rgb(160 178 230 / 0.2);
+	--rule-margin: rgb(214 150 165 / 0.4);
+	--ring-a: #5c574f;
+	--ring-b: #a8a298;
+	--ring-hole: rgb(0 0 0 / 0.7);
+	--shadow-tear: rgb(0 0 0 / 0.4);
+	--color-danger: #f2b8b5;
+}
+
+/* 整頓モード：傾き・動きを止めて読みやすさ優先にする */
+:root.tidy {
+	--wobble: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--wobble: 0;
+	}
+}
+
+@media (max-width: 640px) {
+	:root {
+		--wobble: 0.5;
+	}
+}
+
+/*
+  画用紙のページ。
+  机の色（--color-bg）を html に敷き、その上に「画用紙・水彩のにじみ・紙の質感」を
+  body::before の固定レイヤーとして 1 枚だけ描く。スクロールしても動かないので、描き直しは起きない。
+  上端のリング綴じは Base.astro の .binding（繰り返し背景）。
+*/
+html {
+	background-color: var(--color-bg);
+}
+
+body {
+	background: transparent;
+	overflow-x: hidden;
+}
+
+body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	background-color: var(--color-paper);
+	background-image:
+		radial-gradient(ellipse 420px 300px at 12% 22%, var(--wash-lilac), transparent 70%),
+		radial-gradient(ellipse 480px 320px at 88% 30%, var(--wash-peach), transparent 70%),
+		radial-gradient(ellipse 600px 360px at 50% 78%, var(--wash-sage), transparent 70%),
+		repeating-radial-gradient(
+			circle at 30% 40%,
+			var(--paper-grain) 0,
+			var(--paper-grain) 1px,
+			transparent 1px,
+			transparent 4px
+		);
+}
+
+::selection {
+	background: var(--crayon-yellow);
+	color: var(--crayon-ink);
+}
+
+/* キーボード操作の位置をはっきり見せる（赤ペンの太い点線） */
+:focus-visible {
+	outline: 3px dashed var(--color-accent);
+	outline-offset: 4px;
+}
+
+/* ------------------------------------------------------------------
+   共通パーツ
+   ------------------------------------------------------------------ */
+
+/* 手描きの枠：太さ 2px の線と、いびつな角。CSS だけなので重さは 0 */
+.hand-frame {
+	border: 2px solid var(--color-text);
+	border-radius: var(--hand-radius);
+}
+
+.hand-frame--alt {
+	border-radius: var(--hand-radius-alt);
+}
+
+/* マスキングテープ（要素の ::before に貼る）。淡い縞。飾りなので読み上げには出ない */
+.tape {
+	position: relative;
+}
+
+.tape::before {
+	content: "";
+	position: absolute;
+	top: -13px;
+	left: 50%;
+	width: 110px;
+	height: 26px;
+	translate: -50% 0;
+	rotate: calc(var(--tape-rot, -4deg) * var(--wobble));
+	background: repeating-linear-gradient(
+		45deg,
+		color-mix(in srgb, var(--tape-color, var(--crayon-sage)) 88%, transparent) 0 6px,
+		color-mix(in srgb, var(--tape-color, var(--crayon-sage)) 62%, transparent) 6px 12px
+	);
+	z-index: 2;
+	pointer-events: none;
+}
+
+/*
+  写真コーナー（4 すみの三角）。写真を包む要素（position: relative）に付ける。
+  三角の色は --corner-color（初期値はインク）。
+*/
+.photo-corners {
+	position: relative;
+}
+
+.photo-corners::after {
+	content: "";
+	position: absolute;
+	inset: -6px;
+	pointer-events: none;
+	opacity: 0.85;
+	background:
+		linear-gradient(135deg, var(--corner-color, var(--color-text)) 50%, transparent 50%) left top / 34px 34px no-repeat,
+		linear-gradient(225deg, var(--corner-color, var(--color-text)) 50%, transparent 50%) right top / 34px 34px no-repeat,
+		linear-gradient(45deg, var(--corner-color, var(--color-text)) 50%, transparent 50%) left bottom / 34px 34px no-repeat,
+		linear-gradient(315deg, var(--corner-color, var(--color-text)) 50%, transparent 50%) right bottom / 34px 34px no-repeat;
+}
+
+/* 貼った紙（本文を読むところ）。画用紙より 1 段白い */
+.paper {
+	background: var(--color-surface);
+	color: var(--color-text);
+	box-shadow: var(--shadow-paper);
+	padding: clamp(1.25rem, 4vw, 3rem);
+}
+
+/*
+  罫線ノートの紙：青い罫線と、左の赤い余白線。
+  罫線の間隔は 1 行の高さ（--rule-h）。本文の行の高さと余白を --rule-h の倍数にして、文字を罫線の上に乗せる。
+  上下に 1 行ぶんの余白を空けるので、罫線は紙の上端から --rule-h ごとに引ける。
+  引用・写真のように高さが決まらないものの後では、罫線と行が少しずれる。
+*/
+.paper--ruled {
+	--rule-h: calc(var(--font-size-base) * var(--leading-relaxed));
+	background-color: var(--color-surface);
+	background-image:
+		linear-gradient(90deg, transparent 30px, var(--rule-margin) 30px 32px, transparent 32px),
+		repeating-linear-gradient(transparent 0 calc(var(--rule-h) - 1px), var(--rule-line) calc(var(--rule-h) - 1px) var(--rule-h));
+	padding-block: var(--rule-h);
+	padding-inline-start: clamp(3rem, 7vw, 4.5rem);
+}
+
+/* 手書きメモ */
+.hand {
+	font-family: var(--font-hand);
+	font-weight: 600;
+}
+
+/* 蛍光ペンで引いたような強調（色は --marker で変える。初期値は黄） */
+.marker {
+	background: linear-gradient(transparent 55%, var(--marker, var(--hl-yellow)) 55% 90%, transparent 90%);
+	padding: 0 0.15em;
+	color: inherit;
+}
+
+/* 丸いシール（絵文字などを手描きの丸の中に入れる） */
+.sticker {
+	display: inline-grid;
+	place-items: center;
+	width: 3.5rem;
+	height: 3.5rem;
+	border-radius: var(--hand-round);
+	background: var(--sticker-bg, var(--crayon-pink));
+	color: var(--crayon-ink);
+	border: 2px solid var(--color-text);
+	font-size: 1.6rem;
+	line-height: 1;
+	rotate: calc(12deg * var(--wobble));
+	transition: rotate var(--spring), scale var(--spring);
+}
+
+/*
+  押せるものは手描きの枠のクレヨンボタン。
+  M3E のボタンのように、押している間は少し小さくなり、離すとばねで元に戻る。
+  動かすのは translate / scale / rotate だけ。
+*/
+.btn-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5em;
+	min-height: 48px;
+	padding: 0.5rem 1.4rem;
+	font-family: var(--font-body);
+	font-weight: 700;
+	font-size: var(--font-size-sm);
+	color: var(--crayon-ink);
+	background: var(--btn-bg, var(--crayon-yellow));
+	border: 2px solid var(--color-text);
+	border-radius: var(--hand-radius);
+	text-decoration: none;
+	cursor: pointer;
+	rotate: calc(var(--btn-rot, -1.5deg) * var(--wobble));
+	transition:
+		translate var(--spring-fast),
+		scale var(--spring-fast),
+		rotate var(--spring);
+}
+
+.btn-label--alt {
+	border-radius: var(--hand-radius-alt);
+}
+
+.btn-label:hover {
+	translate: 0 -2px;
+	scale: 1.03;
+	rotate: 0deg;
+}
+
+.btn-label:active {
+	translate: 0 1px;
+	scale: 0.96;
+}
+
+/* 形が変わるステッカー（M3E のシェイプ）。ホバーで別の形にモーフする */
+.morph {
+	clip-path: var(--shape-from, var(--shape-cookie));
+	transition:
+		clip-path var(--spring-slow),
+		rotate var(--spring-slow),
+		scale var(--spring);
+}
+
+.morph-host:hover .morph,
+.morph-host:focus-visible .morph,
+.morph-host:focus-within .morph,
+.morph:hover {
+	clip-path: var(--shape-to, var(--shape-sunny));
+	rotate: calc(var(--morph-rot, 30deg) * var(--wobble));
+	scale: var(--morph-scale, 1.08);
+}
+
+/* 小見出しのタグ：手描きの枠に黄色のクレヨンを塗ったラベル */
+.label-tape {
+	display: inline-block;
+	padding: 0.3rem 1rem;
+	font-family: var(--font-heading);
+	font-weight: var(--font-weight-heading);
+	font-size: var(--font-size-lg);
+	color: var(--crayon-ink);
+	background: var(--label-bg, var(--crayon-yellow));
+	border: 2px solid var(--color-text);
+	border-radius: var(--hand-radius-alt);
+	rotate: calc(-2deg * var(--wobble));
+}
+
+/* 本文（Portable Text）の共通スタイル */
+.prose {
+	font-size: var(--font-size-base);
+	line-height: var(--leading-relaxed);
+}
+
+.prose :where(p, ul, ol) {
+	margin-bottom: 1.2em;
+}
+
+.prose :where(ul, ol) {
+	padding-inline-start: 1.4em;
+}
+
+/* 見出しは蛍光ペンでなぞる */
+.prose :where(h2) {
+	display: inline-block;
+	margin: 2em 0 0.8em;
+	font-size: var(--font-size-xl);
+	background: linear-gradient(transparent 58%, var(--hl-yellow) 58% 92%, transparent 92%);
+}
+
+.prose :where(h3) {
+	margin: 1.6em 0 0.5em;
+	font-size: var(--font-size-lg);
+}
+
+/* 引用は黄色いふせん */
+.prose :where(blockquote) {
+	margin: 2em 0;
+	padding: 1rem 1.25rem;
+	font-family: var(--font-hand);
+	font-weight: 600;
+	font-size: var(--font-size-lg);
+	color: var(--crayon-ink);
+	background: var(--crayon-yellow);
+	box-shadow: var(--shadow-paper);
+	rotate: calc(-1deg * var(--wobble));
+}
+
+.prose :where(a) {
+	color: var(--color-accent);
+	text-underline-offset: 3px;
+	text-decoration-thickness: 2px;
+}
+
+/* 罫線ノートの上の本文：1 行＝--rule-h。段落の間は 1 行あける */
+.paper--ruled.prose {
+	line-height: var(--rule-h);
+}
+
+.paper--ruled.prose :where(p, ul, ol) {
+	margin-bottom: var(--rule-h);
+}
+
+.paper--ruled.prose :where(h2, h3) {
+	display: block;
+	width: fit-content;
+	margin: 0;
+	line-height: var(--rule-h);
+}
+
+/* 本文の中の写真：白いふちの写真 */
+.prose :where(img) {
+	margin: 2em 0;
+	padding: 10px;
+	background: var(--color-surface);
+	box-shadow: var(--shadow-paper);
+}
+
+/* 動きを止めたいとき */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/* ------------------------------------------------------------------
+   ページの移り変わり（View Transitions）
+   カードの写真やコードが、詳細ページの同じものへ伸びるように動く
+   ------------------------------------------------------------------ */
+@view-transition {
+	navigation: auto;
+}
+
+::view-transition-group(*) {
+	animation-duration: var(--m3e-default-spatial-duration);
+	animation-timing-function: var(--m3e-default-spatial);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: var(--m3e-fast-effects-duration);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+}
+
+/* ------------------------------------------------------------------
+   コード（Shiki の 2 色テーマを、昼・夜で切り替える）
+   ------------------------------------------------------------------ */
+.code-paper .shiki,
+.code-paper .shiki span {
+	color: var(--shiki-light);
+	background-color: transparent !important;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not(.light) .code-paper .shiki,
+	:root:not(.light) .code-paper .shiki span {
+		color: var(--shiki-dark);
+	}
+}
+
+:root.dark .code-paper .shiki,
+:root.dark .code-paper .shiki span {
+	color: var(--shiki-dark);
+}
+
+.code-paper .shiki {
+	font-family: var(--font-mono);
+	font-size: 0.875rem;
+	line-height: 1.7;
+	tab-size: 2;
+	overflow-x: auto;
+}

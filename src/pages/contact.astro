@@ -1,0 +1,96 @@
+---
+import Base from "../layouts/Base.astro";
+
+// 公開する前に、自分の連絡先に書き換える
+const contactEmail = "hello@example.com";
+---
+
+<Base title="れんらく" description="お仕事や感想のご連絡はこちらから。">
+	<div class="contact-page">
+		<section class="letter paper paper--ruled tape" aria-labelledby="contact-title">
+			<!-- 切手（飾り）：手描きのハート。ふちのぎざぎざは点線で表す -->
+			<span class="stamp" aria-hidden="true">
+				<svg viewBox="0 0 48 44" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M24 38C4 26 2 12 12 8c6-2 10 2 12 7 2-5 6-9 12-7 10 4 8 18-12 30z" />
+				</svg>
+			</span>
+			<p class="letter-to hand">〜 読んでくれたあなたへ 〜</p>
+			<h1 id="contact-title" class="contact-title">お便り、まってます</h1>
+			<p class="contact-intro">
+				お仕事の相談、作品の感想、なんでも気軽にどうぞ。<br />
+				メールアプリが開くので、そのまま送ってください。
+			</p>
+			<a class="btn-label contact-link" href={`mailto:${contactEmail}`}>
+				<svg class="mail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<rect x="3" y="5" width="18" height="14" rx="3" />
+					<path d="m4 8 8 6 8-6" />
+				</svg>
+				{contactEmail}
+			</a>
+		</section>
+	</div>
+</Base>
+
+<style>
+	.contact-page {
+		max-width: 760px;
+		margin: 0 auto;
+		padding: var(--spacing-4xl) var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	.letter {
+		position: relative;
+		rotate: calc(-1deg * var(--wobble));
+	}
+
+	/* 切手：クレヨンの桃色の紙に、白い点線のぎざぎざ */
+	.stamp {
+		position: absolute;
+		top: var(--spacing-md);
+		right: var(--spacing-md);
+		display: grid;
+		place-items: center;
+		width: 4.5rem;
+		height: 5.5rem;
+		color: var(--crayon-ink);
+		background: var(--crayon-peach);
+		outline: 4px dotted var(--color-surface);
+		outline-offset: -8px;
+		rotate: calc(8deg * var(--wobble));
+	}
+
+	.stamp svg {
+		width: 2.4rem;
+		height: 2.2rem;
+	}
+
+	/* 便せんの罫線に合わせて、行の高さを --rule-h にそろえる */
+	.letter-to {
+		font-size: var(--font-size-lg);
+		line-height: var(--rule-h);
+		color: var(--color-accent);
+	}
+
+	.contact-title {
+		margin: 0;
+		font-size: clamp(2rem, 6vw, 3.25rem);
+		line-height: calc(var(--rule-h) * 2);
+		padding-right: 5rem;
+	}
+
+	.contact-intro {
+		margin-block: var(--rule-h);
+		line-height: var(--rule-h);
+	}
+
+	.contact-link {
+		font-size: var(--font-size-base);
+		word-break: break-all;
+	}
+
+	.mail-icon {
+		flex: none;
+		width: 1.3em;
+		height: 1.3em;
+	}
+</style>

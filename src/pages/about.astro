@@ -1,0 +1,223 @@
+---
+import { getSeoMeta } from "emdash";
+import { loadEntry, runPage } from "../lib/content";
+import { Image, PortableText } from "emdash/ui";
+import Base from "../layouts/Base.astro";
+
+const loaded = await runPage(loadEntry("pages", "about"), "Could not load the page");
+if (loaded instanceof Response) return loaded;
+const { entry: page, cacheHint } = loaded;
+if (!page) return Astro.redirect("/404");
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const seo = getSeoMeta(page, {
+	siteUrl: Astro.url.origin,
+	path: "/about",
+	defaultDescription: "つくっている人のこと。",
+});
+---
+
+<Base
+	title={seo.title}
+	pageTitle={seo.ogTitle}
+	description={seo.description}
+	image={seo.ogImage}
+	canonical={seo.canonical}
+	robots={seo.robots}
+	content={{ collection: "pages", id: page.data.id, slug: "about" }}
+>
+	<div class="about-page">
+		<header class="about-header">
+			<h1 class="about-title" {...page.edit.title}>
+				<span class="marker">{page.data.title}</span>
+			</h1>
+			{
+				page.data.avatar && (
+					<figure class="about-avatar" {...page.edit.avatar}>
+						<Image image={page.data.avatar} />
+						<!-- 手で引いた丸の線（飾り）。絵より少し外側に、ずれて引く -->
+						<svg
+							class="avatar-line"
+							viewBox="0 0 268 268"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.2"
+							stroke-linecap="round"
+							aria-hidden="true"
+						>
+							<path d="M134 8c70-2 124 50 126 122 2 74-52 128-126 130C60 262 8 208 8 134 8 60 62 10 140 12" />
+						</svg>
+					</figure>
+				)
+			}
+		</header>
+
+		<div class="about-content paper paper--ruled tape prose" {...page.edit.content}>
+			{
+				page.data.content ? (
+					<PortableText value={page.data.content} />
+				) : (
+					<p>準備中です。</p>
+				)
+			}
+		</div>
+
+		<aside class="about-sidebar" aria-label="ひとことメモ">
+			<section class="memo memo--yellow tape" style="--tape-color: var(--crayon-blue)">
+				<h2>すきなこと</h2>
+				<ul role="list">
+					<li>ものづくり全般</li>
+					<li>Web とアプリ</li>
+					<li>ちいさな道具</li>
+				</ul>
+			</section>
+
+			<section class="memo memo--pink tape" style="--tape-color: var(--crayon-sage); --tape-rot: 5deg">
+				<h2>れんらく</h2>
+				<p>
+					<a href="/contact">お便りはこちら →</a>
+				</p>
+			</section>
+		</aside>
+	</div>
+</Base>
+
+<style>
+	.about-page {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-2xl);
+		display: grid;
+		grid-template-columns: 2fr 1fr;
+		gap: var(--spacing-2xl) var(--spacing-3xl);
+	}
+
+	.about-header {
+		grid-column: 1 / -1;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	/* 似顔絵：少しゆがんだ丸に切り抜き、外側に手描きの丸の線を引く（線は SVG。絵とは別の飾り） */
+	.about-avatar {
+		position: relative;
+		flex: none;
+		width: clamp(120px, 22vw, 180px);
+		aspect-ratio: 1;
+		rotate: calc(3deg * var(--wobble));
+	}
+
+	.about-avatar :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		border-radius: var(--hand-round);
+		box-shadow: var(--shadow-paper);
+	}
+
+	.avatar-line {
+		position: absolute;
+		inset: -6%;
+		width: 112%;
+		height: 112%;
+		color: var(--color-text);
+		pointer-events: none;
+	}
+
+	.about-title {
+		font-size: clamp(2.25rem, 6vw, 4rem);
+	}
+
+	.about-title .marker {
+		--marker: var(--hl-blue);
+	}
+
+	.about-content {
+		rotate: calc(-0.5deg * var(--wobble));
+	}
+
+	.about-sidebar {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2xl);
+		align-self: start;
+		position: sticky;
+		top: 96px;
+	}
+
+	/* ふせんメモ：クレヨン色の紙をテープで貼る。文字はクレヨンの上に乗る濃い色 */
+	.memo {
+		padding: var(--spacing-lg);
+		color: var(--crayon-ink);
+		box-shadow: var(--shadow-paper);
+	}
+
+	.memo h2 {
+		font-size: var(--font-size-lg);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	/* 箇条書きの印は、鉛筆の絵（マスク）。文字ではなく絵で描く */
+	.memo ul {
+		list-style: none;
+		font-family: var(--font-hand);
+		font-weight: 600;
+		font-size: var(--font-size-lg);
+	}
+
+	.memo li {
+		position: relative;
+		padding-inline-start: 1.6em;
+	}
+
+	.memo li::before {
+		content: "";
+		position: absolute;
+		inset-inline-start: 0;
+		top: 0.5em;
+		width: 1em;
+		height: 1em;
+		background: currentColor;
+		-webkit-mask: var(--pencil) center / contain no-repeat;
+		mask: var(--pencil) center / contain no-repeat;
+		--pencil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 25 23 8c1.6-1.6 3.8.6 2.2 2.2L8.3 27.1 4.6 28z'/%3E%3C/svg%3E");
+	}
+
+	.memo p {
+		font-family: var(--font-hand);
+		font-weight: 600;
+		font-size: var(--font-size-lg);
+	}
+
+	.memo a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		text-decoration: underline wavy currentColor 1.5px;
+		text-underline-offset: 6px;
+	}
+
+	.memo--yellow {
+		background: var(--crayon-yellow);
+		rotate: calc(2deg * var(--wobble));
+	}
+
+	.memo--pink {
+		background: var(--crayon-pink);
+		rotate: calc(-3deg * var(--wobble));
+	}
+
+	@media (max-width: 768px) {
+		.about-page {
+			grid-template-columns: 1fr;
+		}
+
+		.about-sidebar {
+			position: static;
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		}
+	}
+</style>
